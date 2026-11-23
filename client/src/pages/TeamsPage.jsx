@@ -11,7 +11,9 @@ import {
   Edit2,
   Trash2,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  User
 } from 'lucide-react';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -82,17 +84,17 @@ const TeamsPage = () => {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (team) => {
+  const openEditModal = (t) => {
     setIsEditing(true);
-    setCurrentId(team.id);
+    setCurrentId(t.id);
     setFormData({
-      name: team.name,
-      shortName: team.shortName || '',
-      college: team.college,
-      department: team.department || '',
-      captainName: team.captainName || '',
-      contactEmail: team.contactEmail || '',
-      logo: team.logo || ''
+      name: t.name,
+      shortName: t.shortName || '',
+      college: t.college || '',
+      department: t.department || '',
+      captainName: t.captainName || '',
+      contactEmail: t.contactEmail || '',
+      logo: t.logo || ''
     });
     setFormError('');
     setIsModalOpen(true);
@@ -112,7 +114,7 @@ const TeamsPage = () => {
       setIsModalOpen(false);
       fetchTeams();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Operation failed.');
+      setFormError(err.response?.data?.message || 'Failed to save team.');
     } finally {
       setFormLoading(false);
     }
@@ -129,255 +131,250 @@ const TeamsPage = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-indigo-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Shield className="w-6 h-6 text-[#4cd7f6]" />
             <span>Collegiate Teams & Rosters</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Departmental sports clubs, team captains, and active player rosters
+          <p className="text-xs text-[#8c909f] mt-1">
+            Registered campus departments, athletic squads, captains, and match statistics
           </p>
         </div>
 
         {isAdmin && (
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow-sm active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4" />
-            <span>Add New Team</span>
+            <span>Register New Team</span>
           </button>
         )}
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-navy-900 p-4 rounded-2xl border border-slate-800 max-w-md relative">
-        <Search className="w-4 h-4 text-slate-500 absolute left-7 top-7" />
+      {/* Search Input */}
+      <div className="relative max-w-md">
+        <Search className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by team name, department or captain..."
-          className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          placeholder="Search by team title, department, or captain..."
+          className="w-full bg-[#1a1f2c] border border-[#252a37] rounded pl-9 pr-3 py-2 text-xs text-[#dee2f4] placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
         />
       </div>
 
       {/* Teams Grid */}
       {loading ? (
-        <div className="text-center py-12 text-slate-500 text-xs">Loading squads...</div>
+        <div className="py-20 text-center text-xs font-mono text-[#8c909f]">
+          Loading team registries...
+        </div>
       ) : teams.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-navy-900 border border-slate-800 text-center">
-          <Users className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+        <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-12 text-center space-y-3">
+          <Users className="w-10 h-10 text-[#8c909f] mx-auto opacity-50" />
           <h3 className="text-sm font-bold text-white">No teams found</h3>
-          <p className="text-xs text-slate-400 mt-1">Create a new team to begin managing rosters.</p>
+          <p className="text-xs text-[#8c909f]">
+            Try searching a different name or register a new team.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teams.map((team) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {teams.map((t) => (
             <div
-              key={team.id}
-              className="rounded-2xl bg-navy-900 border border-slate-800 overflow-hidden hover:border-slate-700 transition-all flex flex-col justify-between shadow-lg"
+              key={t.id}
+              className="rounded-xl bg-[#1a1f2c] border border-[#252a37] hover:border-[#4d8eff]/50 p-4 sm:p-5 flex flex-col justify-between shadow-lg transition-all space-y-4"
             >
-              <div className="p-6 space-y-4">
-                <div className="flex items-start justify-between gap-4">
+              <div className="space-y-3">
+                {/* Team Card Header */}
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={team.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${team.name}`}
-                      alt={team.name}
-                      className="w-12 h-12 rounded-2xl bg-slate-800 p-1 border border-slate-700 object-cover shadow-md"
-                    />
+                    <div className="w-10 h-10 rounded-full bg-[#4d8eff] text-[#00285d] flex items-center justify-center font-bold text-xs shadow">
+                      {t.shortName || t.name.substring(0, 2).toUpperCase()}
+                    </div>
                     <div>
-                      <h3 className="text-base font-bold text-white line-clamp-1 hover:text-blue-400">
-                        <Link to={`/teams/${team.id}`}>{team.name}</Link>
+                      <h3 className="text-base font-bold text-white tracking-tight line-clamp-1">
+                        {t.name}
                       </h3>
-                      <span className="text-[11px] font-mono font-bold text-blue-400">
-                        {team.shortName || team.name.slice(0, 3).toUpperCase()}
-                      </span>
+                      <p className="text-[11px] text-[#4cd7f6] font-mono">
+                        {t.shortName ? `CODE: ${t.shortName}` : 'DEPT SQUAD'}
+                      </p>
                     </div>
                   </div>
-
-                  {isAdmin && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => openEditModal(team)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteDialog({ isOpen: true, id: team.id, name: team.name })}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
 
-                <div className="space-y-1.5 text-xs text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <Building className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span className="truncate">{team.college} {team.department ? `• ${team.department}` : ''}</span>
-                  </div>
-                  {team.captainName && (
+                {/* Team Details */}
+                <div className="space-y-1.5 pt-2 border-t border-[#252a37] text-xs text-[#c2c6d6]">
+                  {t.department && (
                     <div className="flex items-center gap-2">
-                      <Shield className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span className="text-slate-300">Captain: <strong>{team.captainName}</strong></span>
+                      <Building className="w-3.5 h-3.5 text-[#8c909f] shrink-0" />
+                      <span className="truncate">Dept: {t.department}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span>{team._count?.players ?? 0} Players on Roster</span>
-                  </div>
+                  {t.captainName && (
+                    <div className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-[#4edea3] shrink-0" />
+                      <span>Captain: <strong className="text-white">{t.captainName}</strong></span>
+                    </div>
+                  )}
+                  {t.contactEmail && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-[#8c909f] shrink-0" />
+                      <span className="truncate text-[#8c909f]">{t.contactEmail}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="px-6 py-3.5 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-mono text-[11px]">
-                  {team._count?.tournaments ?? 0} Tournaments
-                </span>
+              {/* Card Footer Actions */}
+              <div className="pt-3 border-t border-[#252a37] flex items-center justify-between">
                 <Link
-                  to={`/teams/${team.id}`}
-                  className="font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  to={`/teams/${t.id}`}
+                  className="font-bold text-xs text-[#4cd7f6] hover:underline flex items-center gap-1"
                 >
-                  <span>View Roster</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <span>Team Profile</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
+
+                {isAdmin && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditModal(t)}
+                      aria-label="Edit"
+                      className="p-1.5 rounded hover:bg-[#252a37] text-[#8c909f] hover:text-white transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteDialog({ isOpen: true, id: t.id, name: t.name })}
+                      aria-label="Delete"
+                      className="p-1.5 rounded hover:bg-red-500/10 text-[#8c909f] hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Create / Edit Team Modal */}
+      {/* Modal for Team Registration / Editing */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isEditing ? 'Edit Team Details' : 'Register New Squad'}
+        title={isEditing ? 'Edit Team Details' : 'Register New Team'}
       >
-        {formError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Team Name</label>
+          {formError && (
+            <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Team Name *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g. Mechanical Bulls"
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Short Code *</label>
               <input
                 type="text"
                 required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Cyber Knights"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Short Code</label>
-              <input
-                type="text"
-                maxLength={4}
+                maxLength={5}
                 value={formData.shortName}
                 onChange={(e) => setFormData({ ...formData, shortName: e.target.value.toUpperCase() })}
-                placeholder="CYB"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white font-mono uppercase focus:outline-none focus:border-blue-500"
+                placeholder="e.g. MB"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white uppercase focus:outline-none focus:border-[#4d8eff]"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / University</label>
-              <input
-                type="text"
-                required
-                value={formData.college}
-                onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-                placeholder="Apex Institute"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Department (Optional)</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Department</label>
               <input
                 type="text"
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                placeholder="Computer Science"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Captain Name</label>
-              <input
-                type="text"
-                value={formData.captainName}
-                onChange={(e) => setFormData({ ...formData, captainName: e.target.value })}
-                placeholder="e.g., Rohan Sharma"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Contact Email</label>
-              <input
-                type="email"
-                value={formData.contactEmail}
-                onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                placeholder="team@college.edu"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                placeholder="e.g. Mechanical Eng"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Logo URL (Optional)</label>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">College / Institution</label>
             <input
-              type="url"
-              value={formData.logo}
-              onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              type="text"
+              value={formData.college}
+              onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+              placeholder="e.g. Apex Institute of Technology"
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Captain Name</label>
+              <input
+                type="text"
+                value={formData.captainName}
+                onChange={(e) => setFormData({ ...formData, captainName: e.target.value })}
+                placeholder="e.g. Alex Hunter"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Contact Email</label>
+              <input
+                type="email"
+                value={formData.contactEmail}
+                onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                placeholder="e.g. captain@college.edu"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#252a37]">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              className="px-3 py-1.5 rounded text-xs font-semibold text-[#c2c6d6] hover:bg-[#252a37]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={formLoading}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95 disabled:opacity-50"
+              className="px-4 py-1.5 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs"
             >
-              {formLoading ? 'Saving...' : isEditing ? 'Update Team' : 'Create Team'}
+              {formLoading ? 'Saving...' : isEditing ? 'Save Changes' : 'Register Team'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
+      {/* Delete Dialog */}
       <ConfirmDialog
         isOpen={deleteDialog.isOpen}
-        onClose={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
-        onConfirm={handleDelete}
         title="Delete Team"
-        message={`Are you sure you want to permanently delete "${deleteDialog.name}"? This will also remove the team from tournaments and roster listings.`}
+        message={`Are you sure you want to delete "${deleteDialog.name}"? This will remove the team from tournament enrollments.`}
+        confirmText="Delete Team"
+        confirmVariant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
       />
     </div>
   );

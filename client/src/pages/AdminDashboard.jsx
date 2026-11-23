@@ -13,7 +13,8 @@ import {
   ArrowUpRight,
   Activity,
   Flame,
-  ShieldCheck
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 import LiveBadge from '../components/common/LiveBadge';
 
@@ -43,273 +44,229 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+    <div className="space-y-6">
+      {/* Top Banner (Stitch Dashboard Header) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <ShieldCheck className="w-6 h-6 text-blue-500" />
-            <span>Administrator Control Center</span>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <ShieldCheck className="w-6 h-6 text-[#4cd7f6]" />
+            <span>Administrator Operations Console</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Centralized management for tournaments, teams, schedules, and scores
+          <p className="text-xs text-[#8c909f] mt-1">
+            Centralized platform control for tournaments, teams, scheduling, and live telemetry
           </p>
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/tournaments?action=new"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20 transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow-sm active:scale-95 transition-all"
           >
-            <Plus className="w-4 h-4" />
-            <span>New Tournament</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Tournament</span>
           </Link>
           <Link
             to="/teams?action=new"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#252a37] hover:bg-[#343947] text-white text-xs font-semibold active:scale-95 transition-all"
           >
-            <Plus className="w-4 h-4" />
-            <span>New Team</span>
+            <Plus className="w-3.5 h-3.5 text-[#4cd7f6]" />
+            <span>Team</span>
           </Link>
           <Link
             to="/matches?action=new"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#252a37] hover:bg-[#343947] text-white text-xs font-semibold active:scale-95 transition-all"
           >
-            <Plus className="w-4 h-4" />
-            <span>Schedule Match</span>
+            <Plus className="w-3.5 h-3.5 text-[#4edea3]" />
+            <span>Fixture</span>
+          </Link>
+          <Link
+            to="/admin/users"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#1a1f2c] border border-[#252a37] hover:bg-[#252a37] text-[#c2c6d6] text-xs font-semibold"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-[#adc6ff]" />
+            <span>Users</span>
           </Link>
         </div>
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="p-4 rounded-2xl bg-navy-900 border border-slate-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Tournaments</span>
-            <Trophy className="w-4 h-4 text-blue-400" />
+      {/* Main Telemetry Stats Grid (6 cards) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="p-3.5 rounded-xl bg-[#1a1f2c] border border-[#252a37] flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8c909f]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Tournaments</span>
+            <Trophy className="w-4 h-4 text-[#4cd7f6]" />
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-white font-mono">{stats?.totalTournaments ?? 0}</span>
-            <p className="text-[10px] text-slate-400 mt-0.5">Active & Completed</p>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-navy-900 border border-slate-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Total Teams</span>
-            <Users className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-white font-mono">{stats?.totalTeams ?? 0}</span>
-            <p className="text-[10px] text-slate-400 mt-0.5">Collegiate Squads</p>
+          <div className="mt-2">
+            <span className="font-stat-mono text-2xl font-bold text-white font-mono tabular-nums">{stats?.totalTournaments ?? 0}</span>
+            <p className="text-[10px] text-[#8c909f] mt-0.5">Active & Staged</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-navy-900 border border-slate-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Total Matches</span>
-            <Calendar className="w-4 h-4 text-cyan-400" />
+        <div className="p-3.5 rounded-xl bg-[#1a1f2c] border border-[#252a37] flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8c909f]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Total Teams</span>
+            <Users className="w-4 h-4 text-[#adc6ff]" />
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-white font-mono">{stats?.totalMatches ?? 0}</span>
-            <p className="text-[10px] text-slate-400 mt-0.5">Scheduled Fixtures</p>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-navy-900 border border-rose-500/20 bg-rose-500/5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-rose-400">
-            <span className="text-xs font-bold">Live Now</span>
-            <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
-          </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-rose-400 font-mono">{stats?.liveMatches ?? 0}</span>
-            <p className="text-[10px] text-rose-300/70 mt-0.5">Active Scoreboards</p>
+          <div className="mt-2">
+            <span className="font-stat-mono text-2xl font-bold text-white font-mono tabular-nums">{stats?.totalTeams ?? 0}</span>
+            <p className="text-[10px] text-[#8c909f] mt-0.5">Rosters Registered</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-navy-900 border border-slate-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Completed</span>
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
+        <div className="p-3.5 rounded-xl bg-[#1a1f2c] border border-[#252a37] flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8c909f]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Total Matches</span>
+            <Calendar className="w-4 h-4 text-[#4edea3]" />
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-emerald-400 font-mono">{stats?.completedMatches ?? 0}</span>
-            <p className="text-[10px] text-slate-400 mt-0.5">Finalized Matches</p>
+          <div className="mt-2">
+            <span className="font-stat-mono text-2xl font-bold text-white font-mono tabular-nums">{stats?.totalMatches ?? 0}</span>
+            <p className="text-[10px] text-[#8c909f] mt-0.5">Campus Fixtures</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-navy-900 border border-slate-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Upcoming</span>
-            <Clock className="w-4 h-4 text-amber-400" />
+        <div className="p-3.5 rounded-xl bg-[#1a1f2c] border border-red-500/30 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-red-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Live Contests</span>
+            <Radio className="w-4 h-4 text-red-400 animate-pulse" />
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-amber-400 font-mono">{stats?.upcomingMatches ?? 0}</span>
-            <p className="text-[10px] text-slate-400 mt-0.5">Pending Fixtures</p>
+          <div className="mt-2">
+            <span className="font-stat-mono text-2xl font-bold text-red-400 font-mono tabular-nums flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              {stats?.liveMatches ?? 0}
+            </span>
+            <p className="text-[10px] text-red-400/80 mt-0.5">Active Broadcasts</p>
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-xl bg-[#1a1f2c] border border-[#252a37] flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8c909f]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Completed</span>
+            <CheckCircle className="w-4 h-4 text-[#4edea3]" />
+          </div>
+          <div className="mt-2">
+            <span className="font-stat-mono text-2xl font-bold text-[#4edea3] font-mono tabular-nums">{stats?.completedMatches ?? 0}</span>
+            <p className="text-[10px] text-[#8c909f] mt-0.5">Final Results</p>
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-xl bg-[#1a1f2c] border border-[#252a37] flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8c909f]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Upcoming</span>
+            <Clock className="w-4 h-4 text-[#4cd7f6]" />
+          </div>
+          <div className="mt-2">
+            <span className="font-stat-mono text-2xl font-bold text-[#4cd7f6] font-mono tabular-nums">{stats?.upcomingMatches ?? 0}</span>
+            <p className="text-[10px] text-[#8c909f] mt-0.5">On Schedule</p>
           </div>
         </div>
       </div>
 
-      {/* Live Matches In Progress */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <LiveBadge />
-            <h3 className="text-lg font-bold text-white tracking-tight">Active Live Matches</h3>
+      {/* 2-Column Split: Active Live Games & Real-Time Event Audit Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Active Live Games Column */}
+        <div className="lg:col-span-7 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              <span>Live Sideline Scoreboards</span>
+            </h2>
+            <Link to="/scoreboard" className="text-xs text-[#4cd7f6] hover:underline font-semibold">
+              View All →
+            </Link>
           </div>
-          <Link to="/scoreboard" className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1">
-            <span>Live Center</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
 
-        {liveMatches.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-navy-900/60 border border-slate-800 text-center text-xs text-slate-500">
-            No matches currently LIVE. Start a scheduled match from the Match Schedule page.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {liveMatches.map((m) => (
-              <div
-                key={m.id}
-                className="p-5 rounded-2xl bg-navy-900 border border-slate-800 hover:border-slate-700 flex flex-col justify-between space-y-4 shadow-lg"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono font-bold text-amber-400">{m.sportType}</span>
-                  <span className="text-slate-400 font-mono">{m.currentPeriod || 'In Progress'}</span>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white truncate max-w-[150px]">{m.teamA.name}</span>
-                    <span className="text-base font-black text-white font-mono">
-                      {m.sportType === 'CRICKET' && m.score
-                        ? `${m.score.teamARuns}/${m.score.teamAWickets}`
-                        : m.sportType === 'FOOTBALL' && m.score
-                        ? m.score.teamAGoals
-                        : m.sportType === 'BASKETBALL' && m.score
-                        ? m.score.teamAPoints
-                        : '-'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white truncate max-w-[150px]">{m.teamB.name}</span>
-                    <span className="text-base font-black text-white font-mono">
-                      {m.sportType === 'CRICKET' && m.score
-                        ? `${m.score.teamBRuns}/${m.score.teamBWickets}`
-                        : m.sportType === 'FOOTBALL' && m.score
-                        ? m.score.teamBGoals
-                        : m.sportType === 'BASKETBALL' && m.score
-                        ? m.score.teamBPoints
-                        : '-'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
-                  <span className="text-slate-400 truncate max-w-[120px]">{m.venue}</span>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`/scoreboard/${m.id}?mode=scorer`}
-                      className="px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 text-[11px] font-semibold hover:bg-blue-600/30"
-                    >
-                      Score Console
-                    </Link>
-                    <Link
-                      to={`/scoreboard/${m.id}`}
-                      className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-medium hover:text-white"
-                    >
-                      View
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Recent Activity Timeline & Quick Links */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-navy-900 border border-slate-800 space-y-4">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Activity className="w-4 h-4 text-blue-400" />
-            <span>Recent Match Activity & Scoring Logs</span>
-          </h3>
-
-          {recentEvents.length === 0 ? (
-            <p className="text-xs text-slate-500 italic">No recent match scoring events recorded.</p>
+          {liveMatches.length === 0 ? (
+            <div className="p-8 rounded-xl bg-[#1a1f2c] border border-[#252a37] text-center text-xs text-[#8c909f]">
+              No matches currently in progress. Start a scheduled match to stream live telemetry.
+            </div>
           ) : (
             <div className="space-y-3">
-              {recentEvents.map((evt) => (
-                <div
-                  key={evt.id}
-                  className="p-3 rounded-xl bg-slate-850/70 border border-slate-800 flex items-start justify-between gap-3 text-xs"
-                >
-                  <div>
-                    <span className="font-semibold text-white">
-                      {evt.match?.teamA?.name} vs {evt.match?.teamB?.name}
-                    </span>
-                    <p className="text-slate-300 mt-0.5">{evt.description}</p>
+              {liveMatches.map((m) => {
+                const team1 = m.team1 || m.teamA;
+                const team2 = m.team2 || m.teamB;
+
+                return (
+                  <div
+                    key={m.id}
+                    className="p-4 rounded-xl bg-[#1a1f2c] border border-[#252a37] hover:border-[#4d8eff]/50 transition-colors space-y-3"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#4cd7f6] uppercase">
+                        {m.sportType} • {m.tournament?.name}
+                      </span>
+                      <div className="flex items-center gap-1.5 text-red-400 font-mono text-[11px] font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        <span>LIVE</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-[#090e1a] border border-[#1a1f2c] flex items-center justify-between text-xs sm:text-sm font-bold text-white">
+                      <span>{team1?.name}</span>
+                      <span className="font-score-display text-base text-[#4cd7f6] font-mono tabular-nums">
+                        {m.sportType === 'CRICKET' && (m.cricketScore || m.score)
+                          ? `${(m.cricketScore || m.score).team1Runs ?? (m.cricketScore || m.score).teamARuns ?? 0}/${(m.cricketScore || m.score).team1Wickets ?? (m.cricketScore || m.score).teamAWickets ?? 0}`
+                          : m.sportType === 'FOOTBALL' && (m.footballScore || m.score)
+                          ? `${(m.footballScore || m.score).team1Goals ?? (m.footballScore || m.score).teamAGoals ?? 0} - ${(m.footballScore || m.score).team2Goals ?? (m.footballScore || m.score).teamBGoals ?? 0}`
+                          : m.sportType === 'BASKETBALL' && (m.basketballScore || m.score)
+                          ? `${(m.basketballScore || m.score).team1Score ?? (m.basketballScore || m.score).teamAPoints ?? 0} - ${(m.basketballScore || m.score).team2Score ?? (m.basketballScore || m.score).teamBPoints ?? 0}`
+                          : 'VS'}
+                      </span>
+                      <span>{team2?.name}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-xs">
+                      <span className="text-[#8c909f]">{m.venue || 'Campus Arena'}</span>
+                      <Link
+                        to={`/scoreboard/${m.id}?mode=scorer`}
+                        className="text-[#4cd7f6] hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <span>Open Scoring Console</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                    {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Quick Management Shortcuts */}
-        <div className="p-6 rounded-2xl bg-navy-900 border border-slate-800 space-y-4">
-          <h3 className="text-base font-bold text-white">Management Shortcuts</h3>
-          <div className="space-y-2">
-            <Link
-              to="/tournaments"
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <Trophy className="w-4 h-4 text-blue-400" />
-                <span className="text-xs font-semibold text-white">Manage Tournaments</span>
-              </div>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
-            </Link>
+        {/* Real-Time System Event Feed */}
+        <div className="lg:col-span-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#4edea3]" />
+              <span>Real-Time Audit Telemetry</span>
+            </h2>
+            <span className="text-[10px] font-mono text-[#4edea3]">LIVE SYNC</span>
+          </div>
 
-            <Link
-              to="/teams"
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <Users className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs font-semibold text-white">Manage Teams & Players</span>
+          <div className="p-4 rounded-xl bg-[#1a1f2c] border border-[#252a37] space-y-3">
+            {recentEvents.length === 0 ? (
+              <p className="text-xs text-[#8c909f] italic">No scoring events logged today.</p>
+            ) : (
+              <div className="space-y-2">
+                {recentEvents.slice(0, 8).map((evt) => (
+                  <div
+                    key={evt.id}
+                    className="p-2.5 rounded-lg bg-[#090e1a] border border-[#252a37] text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="px-1.5 py-0.2 rounded font-mono font-bold text-[9px] bg-[#252a37] text-[#4cd7f6]">
+                        {evt.eventType}
+                      </span>
+                      <span className="text-[10px] font-mono text-[#8c909f]">
+                        {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className="text-white text-[11px] font-medium leading-tight">
+                      {evt.description}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
-            </Link>
-
-            <Link
-              to="/matches"
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <Calendar className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-semibold text-white">Schedule Fixtures</span>
-              </div>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
-            </Link>
-
-            <Link
-              to="/dashboard/users"
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-semibold text-white">User Roles & Scorers</span>
-              </div>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
-            </Link>
+            )}
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ import {
   CheckCircle,
   ArrowRight
 } from 'lucide-react';
-import { formatDate, getSportBadgeClass } from '../utils/formatters';
+import { formatDate } from '../utils/formatters';
 
 const MatchHistoryPage = () => {
   const [matches, setMatches] = useState([]);
@@ -47,151 +47,142 @@ const MatchHistoryPage = () => {
   }, [sportFilter, tournamentFilter, search]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <History className="w-6 h-6 text-emerald-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <History className="w-6 h-6 text-[#4edea3]" />
             <span>Match Results & Archives</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#8c909f] mt-1">
             Historical records, finalized scores, and winning margins across collegiate tournaments
           </p>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-navy-900 p-4 rounded-2xl border border-slate-800">
-        <div className="w-full md:w-64 relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <div className="sm:col-span-5 relative">
+          <Search className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search teams or venues..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-9 pr-3 py-2 rounded bg-[#1a1f2c] border border-[#252a37] text-xs text-white placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400">Sport:</span>
-            <select
-              value={sportFilter}
-              onChange={(e) => setSportFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none"
-            >
-              <option value="ALL">All Sports</option>
-              <option value="CRICKET">Cricket</option>
-              <option value="FOOTBALL">Football</option>
-              <option value="BASKETBALL">Basketball</option>
-            </select>
-          </div>
+        <div className="sm:col-span-3">
+          <select
+            value={sportFilter}
+            onChange={(e) => setSportFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Sports</option>
+            <option value="CRICKET">Cricket</option>
+            <option value="FOOTBALL">Football</option>
+            <option value="BASKETBALL">Basketball</option>
+          </select>
+        </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400">Tournament:</span>
-            <select
-              value={tournamentFilter}
-              onChange={(e) => setTournamentFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none max-w-[180px] truncate"
-            >
-              <option value="ALL">All Tournaments</option>
-              {tournaments.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
+        <div className="sm:col-span-4">
+          <select
+            value={tournamentFilter}
+            onChange={(e) => setTournamentFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Tournaments</option>
+            {tournaments.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Matches List */}
+      {/* Historical Matches Grid */}
       {loading ? (
-        <div className="text-center py-12 text-slate-500 text-xs">Loading completed fixtures...</div>
+        <div className="py-20 text-center text-xs font-mono text-[#8c909f]">
+          Loading historical match database...
+        </div>
       ) : matches.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-navy-900 border border-slate-800 text-center">
-          <CheckCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-white">No completed matches yet</h3>
-          <p className="text-xs text-slate-400 mt-1">Finished games will automatically populate here.</p>
+        <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-12 text-center space-y-3">
+          <History className="w-10 h-10 text-[#8c909f] mx-auto opacity-50" />
+          <h3 className="text-sm font-bold text-white">No archived matches found</h3>
+          <p className="text-xs text-[#8c909f]">
+            Matches will appear here as soon as they are completed and finalized.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {matches.map((m) => (
-            <div
-              key={m.id}
-              className="rounded-2xl bg-navy-900 border border-slate-800 p-6 flex flex-col justify-between space-y-4 shadow-lg hover:border-slate-700 transition-all"
-            >
-              <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
-                <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-[10px] ${getSportBadgeClass(m.sportType)}`}>
-                  {m.sportType}
-                </span>
-                <span className="text-slate-400">{formatDate(m.matchDate)}</span>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {matches.map((m) => {
+            const team1 = m.team1 || m.teamA;
+            const team2 = m.team2 || m.teamB;
 
-              <p className="text-xs text-slate-400 truncate">{m.tournament?.name}</p>
-
-              {/* Matchup Scores */}
-              <div className="space-y-3 py-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={m.teamA.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamA.name}`}
-                      alt={m.teamA.name}
-                      className="w-7 h-7 rounded-lg bg-slate-800 p-0.5 border border-slate-700"
-                    />
-                    <span className="text-sm font-bold text-white">{m.teamA.name}</span>
+            return (
+              <div
+                key={m.id}
+                className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-4 sm:p-5 flex flex-col justify-between shadow-lg space-y-3 hover:border-[#252a37]/80 transition-all"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#4cd7f6] uppercase">
+                      {m.sportType}
+                    </span>
+                    <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#4edea3]/20 text-[#4edea3] border border-[#4edea3]/30 uppercase">
+                      COMPLETED
+                    </span>
                   </div>
-                  <span className="text-base font-black text-white font-mono">
-                    {m.sportType === 'CRICKET' && m.score
-                      ? `${m.score.teamARuns}/${m.score.teamAWickets}`
-                      : m.sportType === 'FOOTBALL' && m.score
-                      ? m.score.teamAGoals
-                      : m.sportType === 'BASKETBALL' && m.score
-                      ? m.score.teamAPoints
-                      : '-'}
-                  </span>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={m.teamB.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamB.name}`}
-                      alt={m.teamB.name}
-                      className="w-7 h-7 rounded-lg bg-slate-800 p-0.5 border border-slate-700"
-                    />
-                    <span className="text-sm font-bold text-white">{m.teamB.name}</span>
+                  <p className="text-xs text-[#8c909f] font-semibold truncate">
+                    {m.tournament?.name}
+                  </p>
+
+                  <div className="p-3 rounded-lg bg-[#090e1a] border border-[#1a1f2c] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm font-bold text-white truncate">{team1?.name}</span>
+                      <span className="font-score-display text-sm font-bold text-white font-mono">
+                        {m.sportType === 'CRICKET' && (m.cricketScore || m.score)
+                          ? `${(m.cricketScore || m.score).team1Runs ?? (m.cricketScore || m.score).teamARuns ?? 0}/${(m.cricketScore || m.score).team1Wickets ?? (m.cricketScore || m.score).teamAWickets ?? 0}`
+                          : m.sportType === 'FOOTBALL' && (m.footballScore || m.score)
+                          ? (m.footballScore || m.score).team1Goals ?? (m.footballScore || m.score).teamAGoals ?? 0
+                          : m.sportType === 'BASKETBALL' && (m.basketballScore || m.score)
+                          ? (m.basketballScore || m.score).team1Score ?? (m.basketballScore || m.score).teamAPoints ?? 0
+                          : '-'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm font-semibold text-[#c2c6d6] truncate">{team2?.name}</span>
+                      <span className="font-score-display text-sm font-bold text-[#c2c6d6] font-mono">
+                        {m.sportType === 'CRICKET' && (m.cricketScore || m.score)
+                          ? `${(m.cricketScore || m.score).team2Runs ?? (m.cricketScore || m.score).teamBRuns ?? 0}/${(m.cricketScore || m.score).team2Wickets ?? (m.cricketScore || m.score).teamBWickets ?? 0}`
+                          : m.sportType === 'FOOTBALL' && (m.footballScore || m.score)
+                          ? (m.footballScore || m.score).team2Goals ?? (m.footballScore || m.score).teamBGoals ?? 0
+                          : m.sportType === 'BASKETBALL' && (m.basketballScore || m.score)
+                          ? (m.basketballScore || m.score).team2Score ?? (m.basketballScore || m.score).teamBPoints ?? 0
+                          : '-'}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-base font-black text-white font-mono">
-                    {m.sportType === 'CRICKET' && m.score
-                      ? `${m.score.teamBRuns}/${m.score.teamBWickets}`
-                      : m.sportType === 'FOOTBALL' && m.score
-                      ? m.score.teamBGoals
-                      : m.sportType === 'BASKETBALL' && m.score
-                      ? m.score.teamBPoints
-                      : '-'}
-                  </span>
+                </div>
+
+                <div className="pt-3 border-t border-[#252a37] flex items-center justify-between text-xs">
+                  <span className="text-[#8c909f]">{formatDate(m.matchDate)}</span>
+                  <Link
+                    to={`/matches/${m.id}`}
+                    className="font-bold text-[#4cd7f6] hover:underline flex items-center gap-1"
+                  >
+                    <span>Full Stats</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
-
-              {/* Result Summary */}
-              {m.resultSummary && (
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-semibold text-center">
-                  🏆 {m.resultSummary}
-                </div>
-              )}
-
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span className="truncate">{m.venue}</span>
-                <Link
-                  to={`/scoreboard/${m.id}`}
-                  className="font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
-                >
-                  <span>Scorecard Breakdown</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -67,14 +67,12 @@ const UserProfilePage = () => {
     setPwdError('');
 
     try {
-      const res = await authService.changePassword({
+      await authService.changePassword({
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
       });
-      if (res.success) {
-        setPwdSuccess('Password changed successfully.');
-        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      }
+      setPwdSuccess('Password changed successfully.');
+      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
       setPwdError(err.response?.data?.message || 'Failed to change password.');
     } finally {
@@ -83,183 +81,162 @@ const UserProfilePage = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
-        <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <User className="w-6 h-6 text-blue-500" />
-            <span>My Account & Settings</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Manage your personal profile, department, and security credentials
-          </p>
-        </div>
-
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
-        </button>
+      <div className="pb-4 border-b border-[#252a37]">
+        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+          <User className="w-6 h-6 text-[#4cd7f6]" />
+          <span>User Profile & Account Security</span>
+        </h1>
+        <p className="text-xs text-[#8c909f] mt-1">
+          Update personal details and manage access credentials
+        </p>
       </div>
 
-      {/* Profile Overview Card */}
-      <div className="p-6 rounded-3xl bg-navy-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl">
-        <div className="flex items-center gap-4">
-          <img
-            src={user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || 'User')}`}
-            alt={user?.name}
-            className="w-16 h-16 rounded-full bg-slate-800 border-2 border-blue-500/40 object-cover shadow-lg"
-          />
-          <div className="space-y-1">
-            <h3 className="text-lg font-bold text-white tracking-tight">{user?.name}</h3>
-            <p className="text-xs text-slate-400">{user?.email}</p>
-            <div className="flex items-center gap-2 pt-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase">
-                {user?.role} ROLE
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+        {/* Left Column: Account Card */}
+        <div className="md:col-span-5 space-y-4">
+          <div className="p-6 rounded-xl bg-[#1a1f2c] border border-[#252a37] text-center space-y-3 shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-[#4d8eff] text-[#00285d] flex items-center justify-center font-bold text-2xl mx-auto shadow">
+              {user?.name?.substring(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">{user?.name}</h3>
+              <p className="text-xs text-[#8c909f]">{user?.email}</p>
+            </div>
+            <div className="pt-2">
+              <span className="inline-block px-2.5 py-1 rounded text-xs font-mono font-bold bg-[#4d8eff]/20 text-[#adc6ff] border border-[#4d8eff]/30">
+                ROLE: {user?.role}
               </span>
-              <span className="text-xs text-slate-500">•</span>
-              <span className="text-xs text-slate-400">{user?.college || 'Collegiate Member'}</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Update Profile Form */}
-        <div className="p-6 rounded-3xl bg-navy-900 border border-slate-800 space-y-4 shadow-xl">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <User className="w-4 h-4 text-blue-400" />
-            <span>Profile Information</span>
-          </h3>
+        {/* Right Column: Edit Profile & Password */}
+        <div className="md:col-span-7 space-y-5">
+          {/* Edit Profile Details */}
+          <div className="p-5 rounded-xl bg-[#1a1f2c] border border-[#252a37] space-y-4 shadow-lg">
+            <h3 className="text-sm font-bold text-white">General Information</h3>
 
-          {profileSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{profileSuccess}</span>
-            </div>
-          )}
+            {profileSuccess && (
+              <div className="p-3 rounded bg-[#4edea3]/10 border border-[#4edea3]/30 text-xs text-[#4edea3]">
+                {profileSuccess}
+              </div>
+            )}
+            {profileError && (
+              <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+                {profileError}
+              </div>
+            )}
 
-          {profileError && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>{profileError}</span>
-            </div>
-          )}
+            <form onSubmit={handleProfileSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+                />
+              </div>
 
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Full Name</label>
-              <input
-                type="text"
-                required
-                value={profileData.name}
-                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#dee2f4] mb-1">College / University</label>
+                <input
+                  type="text"
+                  value={profileData.college}
+                  onChange={(e) => setProfileData({ ...profileData, college: e.target.value })}
+                  className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / Department</label>
-              <input
-                type="text"
-                value={profileData.college}
-                onChange={(e) => setProfileData({ ...profileData, college: e.target.value })}
-                placeholder="Apex Institute of Technology"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number</label>
-              <input
-                type="text"
-                value={profileData.phone}
-                onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                placeholder="+1 555-0122"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={profileLoading}
+                  className="px-4 py-2 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow"
+                >
+                  {profileLoading ? 'Saving...' : 'Save Profile Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
 
-            <button
-              type="submit"
-              disabled={profileLoading}
-              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md active:scale-95 disabled:opacity-50"
-            >
-              {profileLoading ? 'Saving...' : 'Save Profile Changes'}
-            </button>
-          </form>
-        </div>
+          {/* Change Password */}
+          <div className="p-5 rounded-xl bg-[#1a1f2c] border border-[#252a37] space-y-4 shadow-lg">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Key className="w-4 h-4 text-[#4cd7f6]" />
+              <span>Change Password</span>
+            </h3>
 
-        {/* Change Password Form */}
-        <div className="p-6 rounded-3xl bg-navy-900 border border-slate-800 space-y-4 shadow-xl">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Key className="w-4 h-4 text-amber-400" />
-            <span>Security & Password</span>
-          </h3>
+            {pwdSuccess && (
+              <div className="p-3 rounded bg-[#4edea3]/10 border border-[#4edea3]/30 text-xs text-[#4edea3]">
+                {pwdSuccess}
+              </div>
+            )}
+            {pwdError && (
+              <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+                {pwdError}
+              </div>
+            )}
 
-          {pwdSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{pwdSuccess}</span>
-            </div>
-          )}
+            <form onSubmit={handlePasswordSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Current Password</label>
+                <input
+                  type="password"
+                  required
+                  value={passwords.currentPassword}
+                  onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                  className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+                />
+              </div>
 
-          {pwdError && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>{pwdError}</span>
-            </div>
-          )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#dee2f4] mb-1">New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={passwords.newPassword}
+                    onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                    className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={passwords.confirmPassword}
+                    onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                    className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+                  />
+                </div>
+              </div>
 
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Current Password</label>
-              <input
-                type="password"
-                required
-                value={passwords.currentPassword}
-                onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                placeholder="••••••••••••"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">New Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={passwords.newPassword}
-                onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                placeholder="Min 6 characters"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Confirm New Password</label>
-              <input
-                type="password"
-                required
-                value={passwords.confirmPassword}
-                onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                placeholder="Repeat new password"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={pwdLoading}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 shadow-md active:scale-95 disabled:opacity-50"
-            >
-              {pwdLoading ? 'Updating...' : 'Update Password'}
-            </button>
-          </form>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={pwdLoading}
+                  className="px-4 py-2 rounded bg-[#252a37] hover:bg-[#343947] text-white font-semibold text-xs border border-[#343947]"
+                >
+                  {pwdLoading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

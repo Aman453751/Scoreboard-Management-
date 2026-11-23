@@ -99,9 +99,9 @@ const TournamentsPage = () => {
     setFormData({
       name: t.name,
       sportType: t.sportType,
-      startDate: new Date(t.startDate).toISOString().split('T')[0],
-      endDate: new Date(t.endDate).toISOString().split('T')[0],
-      location: t.location,
+      startDate: t.startDate ? new Date(t.startDate).toISOString().split('T')[0] : '',
+      endDate: t.endDate ? new Date(t.endDate).toISOString().split('T')[0] : '',
+      location: t.location || '',
       description: t.description || '',
       status: t.status
     });
@@ -109,7 +109,7 @@ const TournamentsPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleFormSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
     setFormError('');
@@ -123,7 +123,7 @@ const TournamentsPage = () => {
       setIsModalOpen(false);
       fetchTournaments();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Operation failed.');
+      setFormError(err.response?.data?.message || 'Failed to save tournament.');
     } finally {
       setFormLoading(false);
     }
@@ -140,23 +140,23 @@ const TournamentsPage = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Trophy className="w-6 h-6 text-amber-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Trophy className="w-6 h-6 text-[#4cd7f6]" />
             <span>Tournaments & Championships</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Browse inter-college leagues, cups, team participation, and brackets
+          <p className="text-xs text-[#8c909f] mt-1">
+            Browse active collegiate leagues, team brackets, and championship schedules
           </p>
         </div>
 
         {isAdmin && (
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow-sm active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Create Tournament</span>
@@ -164,127 +164,147 @@ const TournamentsPage = () => {
         )}
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-navy-900 p-4 rounded-2xl border border-slate-800">
-        <div className="w-full md:w-72 relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+      {/* Filter and Search Ribbon */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+        {/* Search Input */}
+        <div className="md:col-span-5 relative">
+          <Search className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tournament name or venue..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            placeholder="Search tournaments by name or location..."
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded pl-9 pr-3 py-2 text-xs text-[#dee2f4] placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400 font-medium">Sport:</span>
-            <select
-              value={sportFilter}
-              onChange={(e) => setSportFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none"
+        {/* Sport Type Filter */}
+        <div className="md:col-span-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {['ALL', 'CRICKET', 'FOOTBALL', 'BASKETBALL'].map((sport) => (
+            <button
+              key={sport}
+              onClick={() => setSportFilter(sport)}
+              className={`px-3 py-1.5 rounded text-xs font-semibold whitespace-nowrap transition-all ${
+                sportFilter === sport
+                  ? 'bg-[#4d8eff] text-[#00285d] shadow-sm'
+                  : 'bg-[#1a1f2c] border border-[#252a37] text-[#c2c6d6] hover:bg-[#252a37]'
+              }`}
             >
-              <option value="ALL">All Sports</option>
-              <option value="CRICKET">Cricket</option>
-              <option value="FOOTBALL">Football</option>
-              <option value="BASKETBALL">Basketball</option>
-            </select>
-          </div>
+              {sport === 'ALL' ? 'All Sports' : sport.charAt(0) + sport.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400 font-medium">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none"
-            >
-              <option value="ALL">All Status</option>
-              <option value="ONGOING">Ongoing</option>
-              <option value="UPCOMING">Upcoming</option>
-              <option value="COMPLETED">Completed</option>
-            </select>
-          </div>
+        {/* Status Filter */}
+        <div className="md:col-span-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-[#dee2f4] focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="UPCOMING">Upcoming</option>
+            <option value="ONGOING">Ongoing</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
         </div>
       </div>
 
       {/* Tournaments Grid */}
       {loading ? (
-        <div className="text-center py-12 text-slate-500 text-xs">Loading tournaments...</div>
+        <div className="py-20 text-center text-xs font-mono text-[#8c909f]">
+          Loading tournament directories...
+        </div>
       ) : tournaments.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-navy-900 border border-slate-800 text-center">
-          <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+        <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-12 text-center space-y-3">
+          <Trophy className="w-10 h-10 text-[#8c909f] mx-auto opacity-50" />
           <h3 className="text-sm font-bold text-white">No tournaments found</h3>
-          <p className="text-xs text-slate-400 mt-1">Try resetting your search or sport filter.</p>
+          <p className="text-xs text-[#8c909f]">
+            Try adjusting your search criteria or create a new tournament.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {tournaments.map((t) => (
             <div
               key={t.id}
-              className="rounded-2xl bg-navy-900 border border-slate-800 overflow-hidden hover:border-slate-700 transition-all flex flex-col justify-between shadow-lg"
+              className="rounded-xl bg-[#1a1f2c] border border-[#252a37] hover:border-[#4d8eff]/50 p-4 sm:p-5 flex flex-col justify-between shadow-lg transition-all space-y-4"
             >
-              {/* Banner / Card Header */}
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold ${getSportBadgeClass(t.sportType)}`}>
+              <div className="space-y-3">
+                {/* Card Header */}
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#4cd7f6] uppercase tracking-wider">
                     {t.sportType}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${getStatusBadgeClass(t.status)}`}>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                      t.status === 'ONGOING'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        : t.status === 'COMPLETED'
+                        ? 'bg-[#4edea3]/20 text-[#4edea3] border border-[#4edea3]/30'
+                        : 'bg-[#252a37] text-[#8c909f]'
+                    }`}
+                  >
                     {t.status}
                   </span>
                 </div>
 
+                {/* Tournament Info */}
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight line-clamp-1 hover:text-blue-400 transition-colors">
-                    <Link to={`/tournaments/${t.id}`}>{t.name}</Link>
+                  <h3 className="text-base font-bold text-white tracking-tight line-clamp-1">
+                    {t.name}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                    {t.description || 'Inter-college championship series with group matches and knockout stages.'}
+                  <p className="text-xs text-[#8c909f] line-clamp-2 mt-1 leading-relaxed">
+                    {t.description || 'Inter-collegiate championship series for registered campus department teams.'}
                   </p>
                 </div>
 
-                <div className="space-y-1.5 pt-2 text-xs text-slate-400">
+                {/* Metadata Items */}
+                <div className="space-y-1.5 pt-2 border-t border-[#252a37] text-xs text-[#c2c6d6]">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span>{formatDate(t.startDate)} – {formatDate(t.endDate)}</span>
+                    <Calendar className="w-3.5 h-3.5 text-[#8c909f] shrink-0" />
+                    <span>
+                      {formatDate(t.startDate)} - {formatDate(t.endDate)}
+                    </span>
                   </div>
+                  {t.location && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-[#8c909f] shrink-0" />
+                      <span className="truncate">{t.location}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span className="truncate">{t.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span>{t._count?.teams ?? 0} Teams Registered • {t._count?.matches ?? 0} Matches</span>
+                    <Users className="w-3.5 h-3.5 text-[#4cd7f6] shrink-0" />
+                    <span>{t.teams?.length || 0} Participating Teams</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="px-6 py-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between">
+              {/* Card Footer Actions */}
+              <div className="pt-3 border-t border-[#252a37] flex items-center justify-between">
                 <Link
                   to={`/tournaments/${t.id}`}
-                  className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  className="font-bold text-xs text-[#4cd7f6] hover:underline flex items-center gap-1"
                 >
-                  <span>View Details & Standings</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <span>Tournament Overview</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
 
                 {isAdmin && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => openEditModal(t)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                      title="Edit Tournament"
+                      aria-label="Edit"
+                      className="p-1.5 rounded hover:bg-[#252a37] text-[#8c909f] hover:text-white transition-colors"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setDeleteDialog({ isOpen: true, id: t.id, name: t.name })}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      title="Delete Tournament"
+                      aria-label="Delete"
+                      className="p-1.5 rounded hover:bg-red-500/10 text-[#8c909f] hover:text-red-400 transition-colors"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
@@ -294,134 +314,130 @@ const TournamentsPage = () => {
         </div>
       )}
 
-      {/* Create / Edit Modal */}
+      {/* Create / Edit Tournament Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={isEditing ? 'Edit Tournament' : 'Create New Tournament'}
       >
-        {formError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {formError && (
+            <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Tournament Name</label>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Tournament Name *</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Annual Collegiate Basketball Trophy 2026"
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              placeholder="e.g. Annual T20 Collegiate Trophy 2026"
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Sport Type</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Sport Type *</label>
               <select
                 value={formData.sportType}
                 onChange={(e) => setFormData({ ...formData, sportType: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               >
-                <option value="CRICKET">Cricket</option>
+                <option value="CRICKET">Cricket (T20)</option>
                 <option value="FOOTBALL">Football</option>
                 <option value="BASKETBALL">Basketball</option>
               </select>
             </div>
-
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Status</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Status</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               >
                 <option value="UPCOMING">Upcoming</option>
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Start Date</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Start Date</label>
               <input
                 type="date"
-                required
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">End Date</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">End Date</label>
               <input
                 type="date"
-                required
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Location / Stadium</label>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Location / Venue</label>
             <input
               type="text"
-              required
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="e.g., Apex University Main Arena"
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              placeholder="e.g. University Main Sports Arena"
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Description (Optional)</label>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Description</label>
             <textarea
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Details about tournament format, eligibility, or prizes..."
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              placeholder="Tournament format, eligibility, rules..."
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#252a37]">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800"
+              className="px-3 py-1.5 rounded text-xs font-semibold text-[#c2c6d6] hover:bg-[#252a37]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={formLoading}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95 disabled:opacity-50"
+              className="px-4 py-1.5 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs"
             >
-              {formLoading ? 'Saving...' : isEditing ? 'Update Tournament' : 'Create Tournament'}
+              {formLoading ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Tournament'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteDialog.isOpen}
-        onClose={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
-        onConfirm={handleDelete}
         title="Delete Tournament"
-        message={`Are you sure you want to permanently delete "${deleteDialog.name}"? This will delete all associated matches, scores, and tournament leaderboards.`}
+        message={`Are you sure you want to delete "${deleteDialog.name}"? This action will permanently remove all associated matches and point standings.`}
+        confirmText="Delete Tournament"
+        confirmVariant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
       />
     </div>
   );

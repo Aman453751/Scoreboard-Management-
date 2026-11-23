@@ -11,9 +11,14 @@ const CricketScorerControl = ({ match, score, onScoreUpdated }) => {
 
   if (!match || !score) return null;
 
-  const isTeamABatting = (score.battingTeamId || match.teamAId) === match.teamAId;
-  const battingTeam = isTeamABatting ? match.teamA : match.teamB;
-  const bowlingTeam = isTeamABatting ? match.teamB : match.teamA;
+  const team1 = match.team1 || match.teamA;
+  const team2 = match.team2 || match.teamB;
+  const team1Id = match.team1Id || match.teamAId || team1.id;
+  const team2Id = match.team2Id || match.teamBId || team2.id;
+
+  const isTeam1Batting = (score.battingTeamId || team1Id) === team1Id;
+  const battingTeam = isTeam1Batting ? team1 : team2;
+  const bowlingTeam = isTeam1Batting ? team2 : team1;
 
   const handleScoreBall = async (runs, isWicket = false) => {
     setLoading(true);
@@ -61,10 +66,12 @@ const CricketScorerControl = ({ match, score, onScoreUpdated }) => {
     setError('');
     try {
       const newInning = score.currentInning === 1 ? 2 : 1;
-      const newBattingTeamId = isTeamABatting ? match.teamBId : match.teamAId;
-      // Calculate target if switching to 2nd inning
+      const newBattingTeamId = isTeam1Batting ? team2Id : team1Id;
+      const team1ScoreRuns = score.team1Runs ?? score.teamARuns ?? 0;
+      const team2ScoreRuns = score.team2Runs ?? score.teamBRuns ?? 0;
+
       const targetRuns = newInning === 2
-        ? (isTeamABatting ? score.teamARuns + 1 : score.teamBRuns + 1)
+        ? (isTeam1Batting ? team1ScoreRuns + 1 : team2ScoreRuns + 1)
         : null;
 
       const payload = {
@@ -87,141 +94,120 @@ const CricketScorerControl = ({ match, score, onScoreUpdated }) => {
   };
 
   return (
-    <div className="rounded-2xl bg-navy-900 border border-slate-700/80 p-6 space-y-6 shadow-xl">
-      {/* Header with Undo and Innings */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+    <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-5 sm:p-6 space-y-5 shadow-xl">
+      {/* Header with Undo and Innings (Stitch Exact Control Bar) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#252a37]">
         <div>
-          <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-            Cricket Scoring Console
+          <h3 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#4cd7f6]"></span>
+            <span>Cricket Sideline Scoring Console</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Batting: <strong className="text-blue-400 font-semibold">{battingTeam.name}</strong> |
-            Inning: <span className="font-mono">{score.currentInning}</span>
+          <p className="text-xs text-[#8c909f] mt-0.5">
+            Batting: <strong className="text-[#4cd7f6]">{battingTeam.name}</strong> | Inning: <span className="font-mono text-white">{score.currentInning}</span>
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Instant Undo Protocol (Stitch Spec) */}
           <button
             onClick={handleUndo}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition-all active:scale-95 disabled:opacity-50"
-            title="Undo the last scored ball or event"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold active:scale-95 transition-all disabled:opacity-50"
+            title="Rollback last play or score update"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Undo Last Action</span>
+            <span>Instant Undo</span>
           </button>
 
           <button
             onClick={handleSwitchInnings}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#252a37] hover:bg-[#343947] text-[#dee2f4] border border-[#343947] text-xs font-semibold active:scale-95 transition-all"
           >
-            Switch to {score.currentInning === 1 ? '2nd Inning' : '1st Inning'}
+            <span>Switch Innings</span>
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-          <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>{error}</span>
+        <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+          {error}
         </div>
       )}
 
-      {/* Primary Scoring Grid: Runs Per Ball */}
-      <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">
-          Record Standard Runs (Legal Ball)
+      {/* Primary Scoring Action Buttons */}
+      <div className="space-y-2">
+        <label className="text-[11px] font-bold text-[#8c909f] uppercase tracking-wider block">
+          Ball Outcome (Touch to Log Ball)
         </label>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {[
-            { label: '0 Dot', runs: 0, color: 'bg-slate-800 hover:bg-slate-700 text-slate-200' },
-            { label: '1 Run', runs: 1, color: 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-200 border border-blue-700/50' },
-            { label: '2 Runs', runs: 2, color: 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-200 border border-blue-700/50' },
-            { label: '3 Runs', runs: 3, color: 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-200 border border-blue-700/50' },
-            { label: '4 FOUR', runs: 4, color: 'bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 font-bold' },
-            { label: '6 SIX', runs: 6, color: 'bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 font-bold' }
-          ].map((btn) => (
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+          {['0', '1', '2', '3', '4', '6'].map((runs) => (
             <button
-              key={btn.runs}
-              onClick={() => handleScoreBall(btn.runs, false)}
+              key={runs}
+              onClick={() => handleScoreBall(runs, false)}
               disabled={loading}
-              className={`py-3.5 px-2 rounded-xl text-center font-mono font-bold text-sm transition-all shadow-md active:scale-95 disabled:opacity-50 ${btn.color}`}
+              className={`h-12 rounded font-mono font-bold text-base transition-all active:scale-95 flex items-center justify-center ${
+                runs === '4' || runs === '6'
+                  ? 'bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d]'
+                  : runs === '0'
+                  ? 'bg-[#252a37] hover:bg-[#343947] text-[#c2c6d6]'
+                  : 'bg-[#161b28] hover:bg-[#252a37] text-white border border-[#252a37]'
+              }`}
             >
-              {btn.label}
+              {runs === '0' ? 'Dot' : `+${runs}`}
             </button>
           ))}
-        </div>
-      </div>
 
-      {/* Dismissals / Wicket Action */}
-      <div className="pt-2">
-        <label className="block text-xs font-semibold text-rose-400 mb-2 uppercase tracking-wider">
-          Wicket Dismissal
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* Wicket Button */}
           <button
             onClick={() => handleScoreBall(0, true)}
             disabled={loading}
-            className="py-3 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+            className="col-span-2 sm:col-span-1 h-12 rounded bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-base transition-all active:scale-95 flex items-center justify-center shadow"
           >
-            <span>OUT (0 Runs)</span>
-          </button>
-          <button
-            onClick={() => handleScoreBall(1, true)}
-            disabled={loading}
-            className="py-3 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <span>OUT + 1 Run (Run Out)</span>
-          </button>
-          <button
-            onClick={() => handleScoreBall(2, true)}
-            disabled={loading}
-            className="py-3 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <span>OUT + 2 Runs</span>
+            Wicket!
           </button>
         </div>
       </div>
 
-      {/* Extras Selection & Delivery Options */}
-      <div className="pt-2 border-t border-slate-800">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Extra Ball Type
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {['NONE', 'WIDE', 'NO_BALL', 'BYE', 'LEG_BYE'].map((ext) => (
-                <button
-                  key={ext}
-                  type="button"
-                  onClick={() => setSelectedExtra(ext)}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors ${
-                    selectedExtra === ext
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                  }`}
-                >
-                  {ext.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Extras Selection Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-[#252a37]">
+        <div className="sm:col-span-4">
+          <label className="block text-[11px] font-semibold text-[#8c909f] mb-1">Extra Type</label>
+          <select
+            value={selectedExtra}
+            onChange={(e) => setSelectedExtra(e.target.value)}
+            className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="NONE">No Extra (Legal Delivery)</option>
+            <option value="WIDE">Wide (+1 run, ball not counted)</option>
+            <option value="NO_BALL">No Ball (+1 run, free hit)</option>
+            <option value="BYE">Bye</option>
+            <option value="LEG_BYE">Leg Bye</option>
+          </select>
+        </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Custom Commentary / Description (Optional)
-            </label>
+        {selectedExtra !== 'NONE' && (
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-semibold text-[#8c909f] mb-1">Extra Runs</label>
             <input
-              type="text"
-              value={customDescription}
-              onChange={(e) => setCustomDescription(e.target.value)}
-              placeholder="e.g., Slashed over third man for a double"
-              className="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              type="number"
+              min="0"
+              value={extraRuns}
+              onChange={(e) => setExtraRuns(e.target.value)}
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             />
           </div>
+        )}
+
+        <div className={selectedExtra !== 'NONE' ? 'sm:col-span-6' : 'sm:col-span-8'}>
+          <label className="block text-[11px] font-semibold text-[#8c909f] mb-1">Play Description (Optional)</label>
+          <input
+            type="text"
+            value={customDescription}
+            onChange={(e) => setCustomDescription(e.target.value)}
+            placeholder="e.g. Driven through covers for boundary"
+            className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
+          />
         </div>
       </div>
     </div>

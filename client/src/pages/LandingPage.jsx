@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { matchService } from '../services/matchService';
 import { statsService } from '../services/statsService';
 import { useSocket } from '../context/SocketContext';
@@ -9,7 +9,6 @@ import {
   Shield,
   Users,
   ChevronRight,
-  Radio,
   ArrowRight,
   Award,
   Calendar,
@@ -18,25 +17,33 @@ import {
   RotateCcw,
   Sliders,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Star,
+  ExternalLink,
+  Zap,
+  Lock,
+  Flame
 } from 'lucide-react';
-import LiveBadge from '../components/common/LiveBadge';
 import { formatCricketOvers, calculateRunRate } from '../utils/formatters';
 
 const LandingPage = () => {
   const [liveMatches, setLiveMatches] = useState([]);
+  const [allMatches, setAllMatches] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeSportTab, setActiveSportTab] = useState('CRICKET');
+  const [selectedSport, setSelectedSport] = useState('ALL');
   const { socket, isConnected } = useSocket();
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
-      const [matchesRes, statsRes] = await Promise.all([
+      const [liveRes, allRes, statsRes] = await Promise.all([
         matchService.getAll({ status: 'LIVE' }),
+        matchService.getAll({ limit: 10 }),
         statsService.getDashboardStats()
       ]);
-      if (matchesRes.success) setLiveMatches(matchesRes.data.matches || []);
+      if (liveRes.success) setLiveMatches(liveRes.data.matches || []);
+      if (allRes.success) setAllMatches(allRes.data.matches || []);
       if (statsRes.success) setStats(statsRes.data.counts || null);
     } catch (err) {
       console.warn('Error loading landing page data:', err);
@@ -51,629 +58,599 @@ const LandingPage = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const handleGlobalUpdate = () => {
+    const handleScoreUpdate = () => {
       fetchData();
     };
-    socket.on('global_score_update', handleGlobalUpdate);
-    socket.on('live_matches_refresh', handleGlobalUpdate);
+    socket.on('global_score_update', handleScoreUpdate);
+    socket.on('live_matches_refresh', handleScoreUpdate);
 
     return () => {
-      socket.off('global_score_update', handleGlobalUpdate);
-      socket.off('live_matches_refresh', handleGlobalUpdate);
+      socket.off('global_score_update', handleScoreUpdate);
+      socket.off('live_matches_refresh', handleScoreUpdate);
     };
   }, [socket]);
 
-  // Featured game for the hero section
-  const featuredMatch = liveMatches.length > 0 ? liveMatches[0] : null;
+  // Filter matches based on selected sport chip
+  const filteredMatches = (liveMatches.length > 0 ? liveMatches : allMatches).filter((m) => {
+    if (selectedSport === 'ALL') return true;
+    return m.sportType === selectedSport;
+  });
+
+  const featuredMatch = liveMatches.length > 0 ? liveMatches[0] : (allMatches.length > 0 ? allMatches[0] : null);
+  const secondaryMatches = liveMatches.length > 1 ? liveMatches.slice(1) : allMatches.filter(m => m.id !== featuredMatch?.id).slice(0, 4);
+
+  // Counts for sport filter chips
+  const countAll = liveMatches.length > 0 ? liveMatches.length : allMatches.length;
+  const countBasketball = (liveMatches.length > 0 ? liveMatches : allMatches).filter(m => m.sportType === 'BASKETBALL').length;
+  const countCricket = (liveMatches.length > 0 ? liveMatches : allMatches).filter(m => m.sportType === 'CRICKET').length;
+  const countFootball = (liveMatches.length > 0 ? liveMatches : allMatches).filter(m => m.sportType === 'FOOTBALL').length;
 
   return (
-    <div className="space-y-14">
-      {/* 1. HERO SECTION */}
-      <section className="bg-navy-900 border border-slate-800 rounded-xl p-6 sm:p-10 lg:p-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Left Column: Core Value Proposition */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-slate-800/90 border border-slate-700 text-slate-300 text-[11px] font-mono uppercase tracking-wider font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              College Sports Operations Platform
+    <div className="flex flex-col w-full pb-8 space-y-6">
+      {/* 1. TOP TICKER PILL & HORIZONTAL SPORT CHIPS (Exact Stitch Specification) */}
+      <section className="pt-1">
+        <div className="flex items-center justify-between bg-[#1a1f2c] border border-[#252a37] px-3.5 py-1.5 rounded-full shadow-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="relative flex h-2 w-2 flex-shrink-0">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${liveMatches.length > 0 ? 'bg-red-500' : 'bg-[#4edea3]'} opacity-75`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${liveMatches.length > 0 ? 'bg-red-500' : 'bg-[#4edea3]'}`}></span>
+            </span>
+            <span className="font-label-sm text-xs uppercase tracking-wider text-[#dee2f4] font-semibold truncate">
+              {liveMatches.length > 0 ? `${liveMatches.length} Live Matches in Progress` : 'All Collegiate Divisions Synced'}
+            </span>
+          </div>
+          <span className={`font-stat-mono text-xs flex-shrink-0 font-mono font-bold ${isConnected ? 'text-[#4cd7f6]' : 'text-amber-400'}`}>
+            {isConnected ? 'SYNCED' : 'STANDBY'}
+          </span>
+        </div>
+
+        {/* Sport Filters Ribbon */}
+        <div className="flex items-center gap-2 mt-3 overflow-x-auto no-scrollbar py-0.5">
+          <button
+            onClick={() => setSelectedSport('ALL')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-label-sm text-xs font-semibold transition-all active:scale-95 ${
+              selectedSport === 'ALL'
+                ? 'bg-[#4d8eff] text-[#00285d] shadow-sm'
+                : 'bg-[#1a1f2c] text-[#c2c6d6] hover:bg-[#252a37]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">sports</span>
+            <span>All</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] ml-0.5 ${selectedSport === 'ALL' ? 'bg-[#00285d]/30 text-white' : 'bg-[#252a37] text-[#c2c6d6]'}`}>
+              {countAll}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setSelectedSport('BASKETBALL')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-label-sm text-xs font-semibold transition-all active:scale-95 ${
+              selectedSport === 'BASKETBALL'
+                ? 'bg-[#4d8eff] text-[#00285d] shadow-sm'
+                : 'bg-[#1a1f2c] text-[#c2c6d6] hover:bg-[#252a37]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">sports_basketball</span>
+            <span>Basketball</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] ml-0.5 ${selectedSport === 'BASKETBALL' ? 'bg-[#00285d]/30 text-white' : 'bg-[#252a37] text-[#c2c6d6]'}`}>
+              {countBasketball}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setSelectedSport('CRICKET')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-label-sm text-xs font-semibold transition-all active:scale-95 ${
+              selectedSport === 'CRICKET'
+                ? 'bg-[#4d8eff] text-[#00285d] shadow-sm'
+                : 'bg-[#1a1f2c] text-[#c2c6d6] hover:bg-[#252a37]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">sports_cricket</span>
+            <span>Cricket</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] ml-0.5 ${selectedSport === 'CRICKET' ? 'bg-[#00285d]/30 text-white' : 'bg-[#252a37] text-[#c2c6d6]'}`}>
+              {countCricket}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setSelectedSport('FOOTBALL')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-label-sm text-xs font-semibold transition-all active:scale-95 ${
+              selectedSport === 'FOOTBALL'
+                ? 'bg-[#4d8eff] text-[#00285d] shadow-sm'
+                : 'bg-[#1a1f2c] text-[#c2c6d6] hover:bg-[#252a37]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">sports_soccer</span>
+            <span>Football</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] ml-0.5 ${selectedSport === 'FOOTBALL' ? 'bg-[#00285d]/30 text-white' : 'bg-[#252a37] text-[#c2c6d6]'}`}>
+              {countFootball}
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* 2. HERO BANNER WITH TELEMETRY STATS STRIP (Stitch Exact) */}
+      <section>
+        <div className="relative overflow-hidden rounded-xl bg-[#161b28] border border-[#252a37] p-5 sm:p-7 shadow-lg">
+          {/* Glow ambient accent */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#4cd7f6]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="flex flex-col relative z-10 space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#252a37] text-[#4cd7f6] w-fit">
+              <span className="material-symbols-outlined text-[14px]">military_tech</span>
+              <span className="font-label-sm text-[11px] uppercase tracking-widest font-semibold">
+                Collegiate Sports Operations
+              </span>
             </div>
 
-            <div className="space-y-3">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                Real-Time Sports Scoreboard & Tournaments
-              </h1>
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl font-normal">
-                A centralized sports management platform for college administrators, official scorers, and students. Manage multi-sport tournaments, log play-by-play scoring with instant undo, and track live department leaderboards.
-              </p>
-            </div>
+            <h1 className="text-2xl sm:text-4xl font-bold text-[#dee2f4] leading-tight tracking-tight">
+              Every Game. Every Score. <span className="text-[#4cd7f6]">One Platform.</span>
+            </h1>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            <p className="text-xs sm:text-sm text-[#c2c6d6] leading-relaxed max-w-2xl">
+              Real-time scoreboards, live bracket seeding, and rapid sideline tournament ops for university leagues. Official scoring consoles with single-tap rollback for Cricket, Football, and Basketball.
+            </p>
+
+            {/* CTA Buttons Row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
               <Link
                 to="/scoreboard"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                className="flex items-center justify-center gap-2 py-2.5 px-5 rounded bg-[#4d8eff] text-[#00285d] font-label-md text-xs font-bold shadow hover:bg-[#3b82f6] active:scale-[0.98] transition-all"
               >
-                <Radio className="w-3.5 h-3.5" />
+                <span className="material-symbols-outlined text-[18px]">play_circle</span>
                 <span>Watch Live Scores</span>
               </Link>
-
               <Link
                 to="/tournaments"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+                className="flex items-center justify-center gap-2 py-2.5 px-5 rounded bg-[#252a37] text-[#dee2f4] font-label-md text-xs font-semibold hover:bg-[#343947] active:scale-[0.98] transition-all"
               >
-                <Trophy className="w-3.5 h-3.5 text-slate-400" />
-                <span>Tournaments & Brackets</span>
-              </Link>
-
-              <Link
-                to="/login"
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors"
-              >
-                <span>Sign In to Portal</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span className="material-symbols-outlined text-[18px]">account_tree</span>
+                <span>Explore Brackets</span>
               </Link>
             </div>
 
-            {/* Platform Metrics Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-800">
-              <div className="border-l-2 border-slate-700 pl-3">
-                <span className="text-2xl font-black text-white font-mono block">
+            {/* Telemetry Stats Strip */}
+            <div className="grid grid-cols-3 gap-3 pt-3 mt-2 rounded-lg bg-[#090e1a] border border-[#1a1f2c] p-3">
+              <div className="flex flex-col items-center justify-center text-center">
+                <span className="font-stat-mono text-xl sm:text-2xl text-[#dee2f4] font-bold font-mono">
                   {stats?.totalTournaments ?? 3}
                 </span>
-                <span className="text-[11px] text-slate-400 font-medium">Tournaments</span>
+                <span className="font-label-sm text-[10px] sm:text-[11px] text-[#8c909f] uppercase tracking-wider">
+                  Tournaments
+                </span>
               </div>
-              <div className="border-l-2 border-slate-700 pl-3">
-                <span className="text-2xl font-black text-white font-mono block">
+              <div className="flex flex-col items-center justify-center text-center">
+                <span className="font-stat-mono text-xl sm:text-2xl text-[#4cd7f6] font-bold font-mono">
                   {stats?.totalTeams ?? 6}
                 </span>
-                <span className="text-[11px] text-slate-400 font-medium">College Teams</span>
-              </div>
-              <div className="border-l-2 border-slate-700 pl-3">
-                <span className="text-2xl font-black text-rose-400 font-mono block flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                  {stats?.liveMatches ?? liveMatches.length}
+                <span className="font-label-sm text-[10px] sm:text-[11px] text-[#8c909f] uppercase tracking-wider">
+                  Teams
                 </span>
-                <span className="text-[11px] text-slate-400 font-medium">Live Contests</span>
               </div>
-              <div className="border-l-2 border-slate-700 pl-3">
-                <span className="text-2xl font-black text-emerald-400 font-mono block">
-                  &lt;100ms
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span>
+                  <span className="font-stat-mono text-xl sm:text-2xl text-[#4edea3] font-bold font-mono">
+                    &lt;100ms
+                  </span>
+                </div>
+                <span className="font-label-sm text-[10px] sm:text-[11px] text-[#8c909f] uppercase tracking-wider">
+                  Sync Latency
                 </span>
-                <span className="text-[11px] text-slate-400 font-medium">Socket.IO Sync</span>
               </div>
             </div>
-          </div>
-
-          {/* Right Column: Live Featured Match Card */}
-          <div className="lg:col-span-5">
-            {featuredMatch ? (
-              <div className="bg-navy-950 border border-slate-700/80 rounded-xl p-5 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400 uppercase">
-                      {featuredMatch.sportType}
-                    </span>
-                    <span className="text-xs text-slate-400 truncate max-w-[180px]">
-                      {featuredMatch.tournament?.name}
-                    </span>
-                  </div>
-                  <LiveBadge />
-                </div>
-
-                {/* Matchup Rows */}
-                <div className="space-y-3 py-1">
-                  {/* Team A */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={featuredMatch.teamA.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${featuredMatch.teamA.name}`}
-                        alt={featuredMatch.teamA.name}
-                        className="w-8 h-8 rounded bg-slate-800 p-1 border border-slate-700 object-cover"
-                      />
-                      <div>
-                        <h4 className="text-sm font-bold text-white leading-snug">{featuredMatch.teamA.name}</h4>
-                        <span className="text-[11px] text-slate-400 font-mono">{featuredMatch.teamA.college}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xl font-black text-white font-mono tabular-nums">
-                        {featuredMatch.sportType === 'CRICKET' && featuredMatch.score
-                          ? `${featuredMatch.score.teamARuns}/${featuredMatch.score.teamAWickets}`
-                          : featuredMatch.sportType === 'FOOTBALL' && featuredMatch.score
-                          ? featuredMatch.score.teamAGoals
-                          : featuredMatch.sportType === 'BASKETBALL' && featuredMatch.score
-                          ? featuredMatch.score.teamAPoints
-                          : '-'}
-                      </span>
-                      {featuredMatch.sportType === 'CRICKET' && featuredMatch.score && (
-                        <span className="text-[10px] text-slate-400 block font-mono">
-                          ({formatCricketOvers(featuredMatch.score.teamABalls)} ov)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Team B */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={featuredMatch.teamB.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${featuredMatch.teamB.name}`}
-                        alt={featuredMatch.teamB.name}
-                        className="w-8 h-8 rounded bg-slate-800 p-1 border border-slate-700 object-cover"
-                      />
-                      <div>
-                        <h4 className="text-sm font-bold text-white leading-snug">{featuredMatch.teamB.name}</h4>
-                        <span className="text-[11px] text-slate-400 font-mono">{featuredMatch.teamB.college}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xl font-black text-white font-mono tabular-nums">
-                        {featuredMatch.sportType === 'CRICKET' && featuredMatch.score
-                          ? `${featuredMatch.score.teamBRuns}/${featuredMatch.score.teamBWickets}`
-                          : featuredMatch.sportType === 'FOOTBALL' && featuredMatch.score
-                          ? featuredMatch.score.teamBGoals
-                          : featuredMatch.sportType === 'BASKETBALL' && featuredMatch.score
-                          ? featuredMatch.score.teamBPoints
-                          : '-'}
-                      </span>
-                      {featuredMatch.sportType === 'CRICKET' && featuredMatch.score && (
-                        <span className="text-[10px] text-slate-400 block font-mono">
-                          ({formatCricketOvers(featuredMatch.score.teamBBalls)} ov)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Equation / Status Bar */}
-                <div className="bg-slate-900/80 border border-slate-800/80 rounded-lg p-2.5 text-xs text-slate-300 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    <span className="font-semibold text-white">Status:</span>
-                    <span className="text-slate-300 font-mono">{featuredMatch.currentPeriod || 'Live Action'}</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400 truncate max-w-[120px]">{featuredMatch.venue}</span>
-                </div>
-
-                <Link
-                  to={`/scoreboard/${featuredMatch.id}`}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors"
-                >
-                  <span>Open Live Scoreboard Console</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            ) : (
-              <div className="bg-navy-950 border border-slate-800 rounded-xl p-8 text-center space-y-3">
-                <Activity className="w-8 h-8 text-slate-600 mx-auto" />
-                <h4 className="text-sm font-bold text-white">Scheduled Fixtures Queued</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  No match is currently in LIVE status. Official scorers can start scheduled matches from the match operations console.
-                </p>
-                <Link
-                  to="/matches"
-                  className="inline-block px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700"
-                >
-                  View Scheduled Matches
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       </section>
 
-      {/* 2. ACTIVE LIVE MATCHES SECTION */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <LiveBadge />
-            <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Active Live Matches</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Official fixtures currently being scored in real time with WebSocket broadcast
-              </p>
+      {/* 3. FEATURED HEADLINE GAME (Stitch Exact Layout) */}
+      {featuredMatch && (
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#4cd7f6] text-[20px]">star</span>
+              <h2 className="font-headline-sm text-base sm:text-lg text-[#dee2f4] font-bold">
+                Headline Game
+              </h2>
+            </div>
+            <span className="font-label-sm text-xs text-[#8c909f] uppercase tracking-wider font-semibold">
+              {featuredMatch.venue || 'Main Campus Arena'}
+            </span>
+          </div>
+
+          <div className="relative overflow-hidden rounded-xl bg-[#1a1f2c] border border-[#252a37] p-4 sm:p-5 shadow-lg">
+            {/* Ambient live pulse glow */}
+            <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            {/* Match Metadata Header */}
+            <div className="flex items-center justify-between pb-3.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded bg-[#252a37] text-[#dee2f4] font-label-sm text-xs flex items-center gap-1.5 font-semibold">
+                  <span className="material-symbols-outlined text-[14px] text-[#4cd7f6]">
+                    {featuredMatch.sportType === 'BASKETBALL' ? 'sports_basketball' : featuredMatch.sportType === 'CRICKET' ? 'sports_cricket' : 'sports_soccer'}
+                  </span>
+                  <span>{featuredMatch.tournament?.name || 'Varsity Championship'}</span>
+                </span>
+              </div>
+
+              {featuredMatch.status === 'LIVE' ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                  <span className="font-label-sm text-xs font-bold uppercase tracking-wider">
+                    {featuredMatch.sportType === 'BASKETBALL' && (featuredMatch.basketballScore?.currentPeriod ? `${featuredMatch.basketballScore.currentPeriod} • ${featuredMatch.basketballScore.gameClock || 'LIVE'}` : 'LIVE')}
+                    {featuredMatch.sportType === 'FOOTBALL' && `${featuredMatch.footballScore?.currentHalf || '1ST HALF'} • ${featuredMatch.footballScore?.matchMinutes ?? 0}'`}
+                    {featuredMatch.sportType === 'CRICKET' && `LIVE • INN ${featuredMatch.cricketScore?.currentInning || 1}`}
+                  </span>
+                </div>
+              ) : (
+                <span className="px-2.5 py-1 rounded bg-[#252a37] text-[#8c909f] font-mono text-xs font-semibold uppercase">
+                  {featuredMatch.status}
+                </span>
+              )}
+            </div>
+
+            {/* Scoreboard Display Box */}
+            <div className="space-y-3 bg-[#090e1a] border border-[#1a1f2c] rounded-lg p-3.5 sm:p-4">
+              {/* Team 1 */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-[#4d8eff] text-[#00285d] flex items-center justify-center font-bold text-xs flex-shrink-0 shadow">
+                    {featuredMatch.team1?.name?.substring(0, 2).toUpperCase() || 'T1'}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-body-md text-sm sm:text-base font-bold text-[#dee2f4] truncate">
+                        {featuredMatch.team1?.name}
+                      </span>
+                      {featuredMatch.sportType === 'BASKETBALL' && featuredMatch.basketballScore?.possessionTeamId === featuredMatch.team1Id && (
+                        <span className="material-symbols-outlined text-[#4cd7f6] text-[16px]" title="In Possession">sports_basketball</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 font-label-sm text-[11px] text-[#8c909f]">
+                      {featuredMatch.sportType === 'BASKETBALL' && (
+                        <>
+                          <span>Fouls: {featuredMatch.basketballScore?.team1Fouls ?? 0}</span>
+                          <span>•</span>
+                          <span className={featuredMatch.basketballScore?.team1Bonus ? 'text-[#4edea3]' : ''}>
+                            {featuredMatch.basketballScore?.team1Bonus ? 'Bonus Active' : 'Regular'}
+                          </span>
+                        </>
+                      )}
+                      {featuredMatch.sportType === 'CRICKET' && (
+                        <span>Overs: {formatCricketOvers(featuredMatch.cricketScore?.team1Balls ?? 0)}</span>
+                      )}
+                      {featuredMatch.sportType === 'FOOTBALL' && (
+                        <span>Fouls: {featuredMatch.footballScore?.team1Fouls ?? 0}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="font-score-display text-2xl sm:text-3xl text-white font-bold tabular-nums">
+                    {featuredMatch.sportType === 'BASKETBALL' && (featuredMatch.basketballScore?.team1Score ?? 0)}
+                    {featuredMatch.sportType === 'FOOTBALL' && (featuredMatch.footballScore?.team1Goals ?? 0)}
+                    {featuredMatch.sportType === 'CRICKET' && `${featuredMatch.cricketScore?.team1Runs ?? 0}/${featuredMatch.cricketScore?.team1Wickets ?? 0}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-[#1a1f2c]"></div>
+
+              {/* Team 2 */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-[#252a37] text-[#c2c6d6] flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    {featuredMatch.team2?.name?.substring(0, 2).toUpperCase() || 'T2'}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-body-md text-sm sm:text-base font-semibold text-[#c2c6d6] truncate">
+                        {featuredMatch.team2?.name}
+                      </span>
+                      {featuredMatch.sportType === 'BASKETBALL' && featuredMatch.basketballScore?.possessionTeamId === featuredMatch.team2Id && (
+                        <span className="material-symbols-outlined text-[#4cd7f6] text-[16px]" title="In Possession">sports_basketball</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 font-label-sm text-[11px] text-[#8c909f]">
+                      {featuredMatch.sportType === 'BASKETBALL' && (
+                        <>
+                          <span>Fouls: {featuredMatch.basketballScore?.team2Fouls ?? 0}</span>
+                          <span>•</span>
+                          <span className={featuredMatch.basketballScore?.team2Bonus ? 'text-[#4edea3]' : ''}>
+                            {featuredMatch.basketballScore?.team2Bonus ? 'Bonus Active' : 'Regular'}
+                          </span>
+                        </>
+                      )}
+                      {featuredMatch.sportType === 'CRICKET' && (
+                        <span>Overs: {formatCricketOvers(featuredMatch.cricketScore?.team2Balls ?? 0)}</span>
+                      )}
+                      {featuredMatch.sportType === 'FOOTBALL' && (
+                        <span>Fouls: {featuredMatch.footballScore?.team2Fouls ?? 0}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="font-score-display text-2xl sm:text-3xl text-[#c2c6d6] font-bold tabular-nums">
+                    {featuredMatch.sportType === 'BASKETBALL' && (featuredMatch.basketballScore?.team2Score ?? 0)}
+                    {featuredMatch.sportType === 'FOOTBALL' && (featuredMatch.footballScore?.team2Goals ?? 0)}
+                    {featuredMatch.sportType === 'CRICKET' && `${featuredMatch.cricketScore?.team2Runs ?? 0}/${featuredMatch.cricketScore?.team2Wickets ?? 0}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action & Mini Telemetry Footnote */}
+            <div className="flex items-center justify-between pt-3.5">
+              <div className="flex items-center gap-2 text-[#8c909f] font-body-sm text-xs">
+                <span className="material-symbols-outlined text-[16px] text-[#4edea3]">bolt</span>
+                <span>Live telemetry via Socket.IO gateway</span>
+              </div>
+              <Link
+                to={`/matches/${featuredMatch.id}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#4d8eff] text-[#00285d] font-label-sm text-xs font-bold active:scale-95 transition-transform"
+              >
+                <span>Open Console</span>
+                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+              </Link>
             </div>
           </div>
-          <Link
-            to="/scoreboard"
-            className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
-          >
-            <span>Live Center</span>
-            <ChevronRight className="w-4 h-4" />
+        </section>
+      )}
+
+      {/* 4. SIMULTANEOUS FIXTURES CARDS (Stitch Exact Multi-Sport Cards) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-headline-sm text-base sm:text-lg text-[#dee2f4] font-bold">
+            Simultaneous Fixtures
+          </h2>
+          <Link to="/scoreboard" className="font-label-sm text-xs text-[#4cd7f6] font-semibold hover:underline">
+            View All ({countAll}) →
           </Link>
         </div>
 
-        {liveMatches.length === 0 ? (
-          <div className="p-8 rounded-xl bg-navy-900 border border-slate-800 text-center text-xs text-slate-400">
-            No live matches active at this moment. Explore upcoming match schedules or past results.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {liveMatches.map((m) => {
-              const isCricket = m.sportType === 'CRICKET';
-              const isFootball = m.sportType === 'FOOTBALL';
-              const isBasketball = m.sportType === 'BASKETBALL';
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {secondaryMatches.map((match) => (
+            <div
+              key={match.id}
+              className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-4 space-y-3 shadow hover:bg-[#252a37]/80 transition-colors"
+            >
+              {/* Fixture Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="px-2 py-0.5 rounded bg-[#252a37] text-[#4cd7f6] font-label-sm text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1 truncate">
+                    <span className="material-symbols-outlined text-[13px]">
+                      {match.sportType === 'CRICKET' ? 'sports_cricket' : match.sportType === 'BASKETBALL' ? 'sports_basketball' : 'sports_soccer'}
+                    </span>
+                    <span className="truncate">{match.tournament?.name || match.sportType}</span>
+                  </span>
+                  <span className="font-label-sm text-[11px] text-[#8c909f] truncate">
+                    {match.venue || 'Pitch/Court'}
+                  </span>
+                </div>
 
-              return (
-                <Link
-                  key={m.id}
-                  to={`/scoreboard/${m.id}`}
-                  className="bg-navy-900 hover:bg-navy-850 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between transition-colors shadow-sm"
-                >
-                  <div className="space-y-3">
-                    {/* Header */}
-                    <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-amber-400">
-                          {m.sportType}
-                        </span>
-                        <span className="text-slate-400 text-[11px] truncate max-w-[150px]">
-                          {m.tournament?.name}
-                        </span>
+                <div className="flex items-center gap-1 text-red-400 bg-red-500/15 border border-red-500/30 px-2 py-0.5 rounded">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                  <span className="font-stat-mono text-[11px] font-bold">
+                    {match.status === 'LIVE' ? 'LIVE' : match.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Match Score Rows */}
+              {match.sportType === 'CRICKET' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#252a37] flex items-center justify-center text-[10px] text-[#c2c6d6] font-bold">
+                        {match.team1?.name?.substring(0, 2).toUpperCase()}
                       </div>
-                      <LiveBadge />
+                      <span className="text-xs sm:text-sm font-medium text-[#c2c6d6]">{match.team1?.name}</span>
                     </div>
-
-                    {/* Team Matchup Rows */}
-                    <div className="space-y-2.5 py-1">
-                      {/* Team A */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5 overflow-hidden">
-                          <img
-                            src={m.teamA.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamA.name}`}
-                            alt={m.teamA.name}
-                            className="w-6 h-6 rounded bg-slate-800 p-0.5 border border-slate-700 object-cover shrink-0"
-                          />
-                          <span className="text-sm font-bold text-white truncate max-w-[170px]">{m.teamA.name}</span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-lg font-black text-white font-mono tabular-nums">
-                            {isCricket && m.score
-                              ? `${m.score.teamARuns}/${m.score.teamAWickets}`
-                              : isFootball && m.score
-                              ? m.score.teamAGoals
-                              : isBasketball && m.score
-                              ? m.score.teamAPoints
-                              : '-'}
-                          </span>
-                          {isCricket && m.score && (
-                            <span className="text-[10px] text-slate-400 block font-mono">
-                              ({formatCricketOvers(m.score.teamABalls)} ov)
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Team B */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5 overflow-hidden">
-                          <img
-                            src={m.teamB.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamB.name}`}
-                            alt={m.teamB.name}
-                            className="w-6 h-6 rounded bg-slate-800 p-0.5 border border-slate-700 object-cover shrink-0"
-                          />
-                          <span className="text-sm font-bold text-white truncate max-w-[170px]">{m.teamB.name}</span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-lg font-black text-white font-mono tabular-nums">
-                            {isCricket && m.score
-                              ? `${m.score.teamBRuns}/${m.score.teamBWickets}`
-                              : isFootball && m.score
-                              ? m.score.teamBGoals
-                              : isBasketball && m.score
-                              ? m.score.teamBPoints
-                              : '-'}
-                          </span>
-                          {isCricket && m.score && (
-                            <span className="text-[10px] text-slate-400 block font-mono">
-                              ({formatCricketOvers(m.score.teamBBalls)} ov)
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Footer: Metadata & Action */}
-                  <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="font-mono text-slate-300">{m.currentPeriod || 'Live'}</span>
-                    <span className="text-blue-400 font-semibold flex items-center gap-1 hover:text-blue-300">
-                      Scoreboard Console →
+                    <span className="font-mono text-xs sm:text-sm text-[#c2c6d6] tabular-nums font-semibold">
+                      {match.cricketScore?.team1Runs ?? 0}/{match.cricketScore?.team1Wickets ?? 0}{' '}
+                      <span className="text-xs text-[#8c909f]">({formatCricketOvers(match.cricketScore?.team1Balls ?? 0)})</span>
                     </span>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
 
-      {/* 3. MULTI-SPORT SCORING ENGINES (Structured Technical Breakdown) */}
-      <section className="space-y-4">
-        <div className="pb-2 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Multi-Sport Scoring Engines</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Sport-specific scoring algorithms with legal ball validation, match clocks, and snapshot rollbacks
-            </p>
-          </div>
-
-          {/* Engine Selector Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-navy-900 border border-slate-800">
-            {[
-              { id: 'CRICKET', label: 'Cricket T20' },
-              { id: 'FOOTBALL', label: 'Football / Soccer' },
-              { id: 'BASKETBALL', label: 'Basketball' }
-            ].map((sport) => (
-              <button
-                key={sport.id}
-                onClick={() => setActiveSportTab(sport.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                  activeSportTab === sport.id
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {sport.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Engine Specification Display */}
-        <div className="bg-navy-900 border border-slate-800 rounded-xl p-6 lg:p-8">
-          {activeSportTab === 'CRICKET' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-amber-400">
-                  <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                  CRICKET SCORING MATRIX
-                </div>
-                <h3 className="text-xl font-bold text-white">Ball-by-Ball Collegiate T20 Scoring</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  The cricket scoring engine tracks legal delivery progression, runs per ball (0, 1, 2, 3, 4, 6), fall of wickets, and extra-ball categories without manual arithmetic mistakes.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="text-xs font-bold text-white block">Delivery & Overs Rules</span>
-                    <p className="text-xs text-slate-400">
-                      Legal balls increment the over (`15.1`, `15.2`). Wide balls and No Balls award extra runs without advancing the legal ball count.
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#4d8eff] flex items-center justify-center text-[10px] text-[#00285d] font-bold">
+                        {match.team2?.name?.substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-[#dee2f4]">{match.team2?.name}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3]" title="Batting Now"></span>
+                    </div>
+                    <span className="font-mono text-xs sm:text-sm text-white font-bold tabular-nums">
+                      {match.cricketScore?.team2Runs ?? 0}/{match.cricketScore?.team2Wickets ?? 0}{' '}
+                      <span className="text-xs text-[#4cd7f6]">({formatCricketOvers(match.cricketScore?.team2Balls ?? 0)})</span>
+                    </span>
                   </div>
 
-                  <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="text-xs font-bold text-white block">Chasing Equations</span>
-                    <p className="text-xs text-slate-400">
-                      Automatic Current Run Rate (CRR), Required Run Rate (RRR), and target differential for Inning 2 chases.
-                    </p>
+                  {/* Target equation pill */}
+                  <div className="flex items-center justify-between p-2 rounded bg-[#090e1a] border border-[#1a1f2c] text-[#dee2f4] text-[11px]">
+                    <span className="text-[#8c909f]">RR: {calculateRunRate(match.cricketScore?.team2Runs ?? 0, match.cricketScore?.team2Balls ?? 0)}</span>
+                    <Link to={`/matches/${match.id}`} className="text-[#4cd7f6] font-semibold hover:underline">
+                      Live Ball-by-Ball →
+                    </Link>
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className="lg:col-span-5 bg-navy-950 border border-slate-800 rounded-lg p-5 space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-400">
-                  <span>SCORER CONSOLE SIMULATION</span>
-                  <span className="text-emerald-400">ACTIVE ENGINE</span>
+              {match.sportType === 'FOOTBALL' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-1">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <span className="text-xs sm:text-sm font-bold text-[#dee2f4] truncate block">{match.team1?.name}</span>
+                      <span className="text-[10px] text-[#4edea3]">Fouls: {match.footballScore?.team1Fouls ?? 0}</span>
+                    </div>
+                    <div className="px-3.5 py-1 rounded bg-[#090e1a] border border-[#1a1f2c] flex items-center gap-2">
+                      <span className="text-lg font-bold text-white tabular-nums">{match.footballScore?.team1Goals ?? 0}</span>
+                      <span className="text-[#8c909f] text-xs">-</span>
+                      <span className="text-lg font-bold text-[#c2c6d6] tabular-nums">{match.footballScore?.team2Goals ?? 0}</span>
+                    </div>
+                    <div className="flex-1 min-w-0 pl-2 text-right">
+                      <span className="text-xs sm:text-sm font-semibold text-[#c2c6d6] truncate block">{match.team2?.name}</span>
+                      <span className="text-[10px] text-[#8c909f]">Fouls: {match.footballScore?.team2Fouls ?? 0}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 text-[11px] text-[#8c909f] border-t border-[#252a37]">
+                    <span>Half: {match.footballScore?.currentHalf || '1st'}</span>
+                    <Link to={`/matches/${match.id}`} className="text-[#4cd7f6] font-semibold hover:underline">
+                      Match Center →
+                    </Link>
+                  </div>
                 </div>
-                <div className="space-y-1.5 text-slate-300">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Standard Delivery:</span>
-                    <span className="font-bold text-white">0, 1, 2, 3, 4 (Boundary), 6 (Six)</span>
+              )}
+
+              {match.sportType === 'BASKETBALL' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-1">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <span className="text-xs sm:text-sm font-bold text-[#dee2f4] truncate block">{match.team1?.name}</span>
+                      <span className="text-[10px] text-[#8c909f]">Fouls: {match.basketballScore?.team1Fouls ?? 0}</span>
+                    </div>
+                    <div className="px-3.5 py-1 rounded bg-[#090e1a] border border-[#1a1f2c] flex items-center gap-2">
+                      <span className="text-lg font-bold text-white tabular-nums">{match.basketballScore?.team1Score ?? 0}</span>
+                      <span className="text-[#8c909f] text-xs">-</span>
+                      <span className="text-lg font-bold text-[#c2c6d6] tabular-nums">{match.basketballScore?.team2Score ?? 0}</span>
+                    </div>
+                    <div className="flex-1 min-w-0 pl-2 text-right">
+                      <span className="text-xs sm:text-sm font-semibold text-[#c2c6d6] truncate block">{match.team2?.name}</span>
+                      <span className="text-[10px] text-[#8c909f]">Fouls: {match.basketballScore?.team2Fouls ?? 0}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Extras Supported:</span>
-                    <span className="text-amber-400">Wide, No Ball, Bye, Leg Bye</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Innings Phase:</span>
-                    <span className="text-blue-400">1st Inning / 2nd Inning Chase</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Undo Capability:</span>
-                    <span className="text-emerald-400">Zero-Latency State Rollback</span>
+
+                  <div className="flex items-center justify-between pt-1 text-[11px] text-[#8c909f] border-t border-[#252a37]">
+                    <span>Period: {match.basketballScore?.currentPeriod || 'Q1'}</span>
+                    <Link to={`/matches/${match.id}`} className="text-[#4cd7f6] font-semibold hover:underline">
+                      Box Score →
+                    </Link>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-
-          {activeSportTab === 'FOOTBALL' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  FOOTBALL MATCH PROTOCOL
-                </div>
-                <h3 className="text-xl font-bold text-white">Soccer League & Tournament Engine</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Tailored for university soccer fixtures with official match minute clock synchronization, half-time management, goal attribution, and disciplinary card tracking.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="text-xs font-bold text-white block">Match Halves & Clock</span>
-                    <p className="text-xs text-slate-400">
-                      Phase transitions for 1st Half, Half Time, 2nd Half, and Full Time with granular match minute stamps (`24'`, `68'`).
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="text-xs font-bold text-white block">Disciplinary Logging</span>
-                    <p className="text-xs text-slate-400">
-                      Instant tracking of yellow cards, direct red cards, and goal scorer records for post-match disciplinary reviews.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 bg-navy-950 border border-slate-800 rounded-lg p-5 space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-400">
-                  <span>FOOTBALL CONSOLE SIMULATION</span>
-                  <span className="text-emerald-400">ACTIVE ENGINE</span>
-                </div>
-                <div className="space-y-1.5 text-slate-300">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Goal Tracking:</span>
-                    <span className="font-bold text-white">Team A Goals vs Team B Goals</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Timer Controls:</span>
-                    <span className="text-blue-400">Minute Increment & Direct Sync</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Card Registry:</span>
-                    <span className="text-amber-400">🟨 Yellow / 🟥 Red Cards</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Standings Impact:</span>
-                    <span className="text-emerald-400">Win: 3 pts, Draw: 1 pt, Goal Diff</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeSportTab === 'BASKETBALL' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-orange-400">
-                  <span className="w-2 h-2 rounded-full bg-orange-400"></span>
-                  BASKETBALL SCORING SYSTEM
-                </div>
-                <h3 className="text-xl font-bold text-white">Court Quarters & Multi-Point Scoring</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Supports full collegiate basketball scoring with 1-point free throws, 2-point field goals, 3-point downtown triples, team fouls, and quarter countdown clocks.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="text-xs font-bold text-white block">Quarter Management</span>
-                    <p className="text-xs text-slate-400">
-                      Standard Q1 through Q4 quarter transitions plus Overtime (OT) with dedicated quarter clock remaining (`04:18`).
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="text-xs font-bold text-white block">Penalty & Fouls</span>
-                    <p className="text-xs text-slate-400">
-                      Team foul counts tracked on both sides to automatically monitor bonus and double-bonus penalty situations.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 bg-navy-950 border border-slate-800 rounded-lg p-5 space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-400">
-                  <span>BASKETBALL CONSOLE SIMULATION</span>
-                  <span className="text-emerald-400">ACTIVE ENGINE</span>
-                </div>
-                <div className="space-y-1.5 text-slate-300">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Scoring Increments:</span>
-                    <span className="font-bold text-white">+1 Free Throw, +2 Field, +3 Triples</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Quarter Format:</span>
-                    <span className="text-blue-400">Q1, Q2, Q3, Q4 & Overtime</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Foul Counter:</span>
-                    <span className="text-rose-400">Team Fouls A & B Monitored</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Standings Impact:</span>
-                    <span className="text-emerald-400">Win: 2 pts, Loss: 0 pt, Pt Diff</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       </section>
 
-      {/* 4. PLATFORM FEATURES (Organized by User Role) */}
-      <section className="space-y-4">
-        <div className="pb-2 border-b border-slate-800">
-          <h2 className="text-xl font-bold text-white tracking-tight">Collegiate Operational Architecture</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Role-based workflows tailored for athletic directors, match officials, and campus spectators
-          </p>
+      {/* 5. MULTI-SPORT ARCHITECTURE: TAILORED SCORING ENGINES (Stitch Bento Cards) */}
+      <section className="space-y-3 pt-2">
+        <div className="flex flex-col">
+          <span className="font-label-sm text-xs text-[#4cd7f6] uppercase tracking-wider font-semibold">
+            Multi-Sport Architecture
+          </span>
+          <h2 className="font-headline-sm text-lg sm:text-xl text-[#dee2f4] font-bold">
+            Tailored Scoring Engines
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Role 1: Administrator */}
-          <div className="bg-navy-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <Shield className="w-5 h-5" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Cricket Card */}
+          <div className="p-4 rounded-xl bg-[#161b28] border border-[#252a37] flex gap-3.5 items-start shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-[#252a37] flex items-center justify-center text-[#4cd7f6] flex-shrink-0">
+              <span className="material-symbols-outlined text-[22px]">sports_cricket</span>
             </div>
-            <div>
-              <span className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-wider">Access Tier: Admin</span>
-              <h3 className="text-base font-bold text-white mt-1">Tournament & League Operations</h3>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-headline-sm text-sm text-[#dee2f4] font-bold">Cricket Ball-by-Ball</span>
+                <span className="px-1.5 py-0.5 rounded bg-[#4edea3]/20 text-[#4edea3] font-label-sm text-[10px] font-bold">
+                  DLS Ready
+                </span>
+              </div>
+              <p className="font-body-sm text-xs text-[#8c909f] leading-relaxed">
+                Runs, wickets, extras (wides, no-balls), legal ball counters, run-rate tracking, and automated target chasing.
+              </p>
             </div>
-            <ul className="text-xs text-slate-300 space-y-2.5">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                <span>Create and schedule tournaments across Cricket, Football, and Basketball.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                <span>Register collegiate teams, assign team captains, and manage player lineups.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                <span>Designate official scorers and delegate fixture scoring permissions.</span>
-              </li>
-            </ul>
           </div>
 
-          {/* Role 2: Official Scorer */}
-          <div className="bg-navy-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <Sliders className="w-5 h-5" />
+          {/* Football Card */}
+          <div className="p-4 rounded-xl bg-[#161b28] border border-[#252a37] flex gap-3.5 items-start shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-[#252a37] flex items-center justify-center text-[#4cd7f6] flex-shrink-0">
+              <span className="material-symbols-outlined text-[22px]">timer</span>
             </div>
-            <div>
-              <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">Access Tier: Scorer</span>
-              <h3 className="text-base font-bold text-white mt-1">Live Scoring & State Rollback</h3>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-headline-sm text-sm text-[#dee2f4] font-bold">Match Clock & Stoppage</span>
+                <span className="px-1.5 py-0.5 rounded bg-[#4cd7f6]/20 text-[#4cd7f6] font-label-sm text-[10px] font-bold">
+                  VAR Log
+                </span>
+              </div>
+              <p className="font-body-sm text-xs text-[#8c909f] leading-relaxed">
+                Dynamic game clock, stoppage minutes, yellow/red disciplinary sanctions, and referee timeline synchronization.
+              </p>
             </div>
-            <ul className="text-xs text-slate-300 space-y-2.5">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>Dedicated Scorer Workstation listing all fixtures assigned to your account.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>Instant ball-by-ball and goal scoring with single-key rapid data entry.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>Foolproof Undo: Snapshot-based rollback restores score and event state immediately.</span>
-              </li>
-            </ul>
           </div>
 
-          {/* Role 3: Students & Viewers */}
-          <div className="bg-navy-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Users className="w-5 h-5" />
+          {/* Basketball Card */}
+          <div className="p-4 rounded-xl bg-[#161b28] border border-[#252a37] flex gap-3.5 items-start shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-[#252a37] flex items-center justify-center text-[#4cd7f6] flex-shrink-0">
+              <span className="material-symbols-outlined text-[22px]">sports_basketball</span>
             </div>
-            <div>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">Access Tier: Viewer</span>
-              <h3 className="text-base font-bold text-white mt-1">Campus Community & Standings</h3>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-headline-sm text-sm text-[#dee2f4] font-bold">FIBA/NCAA Fouls & Clocks</span>
+                <span className="px-1.5 py-0.5 rounded bg-[#4d8eff]/20 text-[#adc6ff] font-label-sm text-[10px] font-bold">
+                  24s Shot Clock
+                </span>
+              </div>
+              <p className="font-body-sm text-xs text-[#8c909f] leading-relaxed">
+                1PT, 2PT, 3PT field goal toggles, quarter splits, team foul accumulation, bonus free-throw triggers, and possession arrows.
+              </p>
             </div>
-            <ul className="text-xs text-slate-300 space-y-2.5">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Zero page refresh updates via real-time WebSocket broadcast channels.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Live tournament standings with automatic points, goal difference, and run rates.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Complete match history archives and individual department squad performance.</span>
-              </li>
-            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. TOURNAMENT OS: BUILT FOR SIDELINE REFEREES & ADMINS (Stitch 2x2 Grid) */}
+      <section className="space-y-3 pt-2">
+        <div className="flex flex-col">
+          <span className="font-label-sm text-xs text-[#4cd7f6] uppercase tracking-wider font-semibold">
+            Tournament OS
+          </span>
+          <h2 className="font-headline-sm text-lg sm:text-xl text-[#dee2f4] font-bold">
+            Built for Sideline Referees & Admins
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Feature 1 */}
+          <div className="p-3.5 rounded-lg bg-[#1a1f2c] border border-[#252a37] flex flex-col space-y-2">
+            <span className="material-symbols-outlined text-[#4cd7f6] text-[24px]">admin_panel_settings</span>
+            <span className="font-label-md text-xs sm:text-sm text-[#dee2f4] font-bold">Role-Based Access</span>
+            <span className="font-body-sm text-[11px] text-[#8c909f] leading-tight">
+              Strict permissions for Admin, Scorer, and Viewer with JWT tokens.
+            </span>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="p-3.5 rounded-lg bg-[#1a1f2c] border border-[#252a37] flex flex-col space-y-2">
+            <span className="material-symbols-outlined text-[#4edea3] text-[24px]">electric_bolt</span>
+            <span className="font-label-md text-xs sm:text-sm text-[#dee2f4] font-bold">Zero-Latency WebSockets</span>
+            <span className="font-body-sm text-[11px] text-[#8c909f] leading-tight">
+              Instant score broadcast across phones, jumbotrons, and live desks.
+            </span>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="p-3.5 rounded-lg bg-[#1a1f2c] border border-[#252a37] flex flex-col space-y-2">
+            <span className="material-symbols-outlined text-[#adc6ff] text-[24px]">leaderboard</span>
+            <span className="font-label-md text-xs sm:text-sm text-[#dee2f4] font-bold">Auto Standings</span>
+            <span className="font-body-sm text-[11px] text-[#8c909f] leading-tight">
+              Net Run Rate, Goal Difference, and points recalculated instantly on match conclusion.
+            </span>
+          </div>
+
+          {/* Feature 4 */}
+          <div className="p-3.5 rounded-lg bg-[#1a1f2c] border border-[#252a37] flex flex-col space-y-2">
+            <span className="material-symbols-outlined text-red-400 text-[24px]">history</span>
+            <span className="font-label-md text-xs sm:text-sm text-[#dee2f4] font-bold">Instant Scorer Undo</span>
+            <span className="font-body-sm text-[11px] text-[#8c909f] leading-tight">
+              Undo accidental touches with full state history rollback.
+            </span>
           </div>
         </div>
       </section>

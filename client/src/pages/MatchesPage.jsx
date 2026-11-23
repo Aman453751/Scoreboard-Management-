@@ -21,7 +21,7 @@ import {
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import LiveBadge from '../components/common/LiveBadge';
-import { formatDateTime, getStatusBadgeClass, getSportBadgeClass } from '../utils/formatters';
+import { formatDateTime } from '../utils/formatters';
 
 const MatchesPage = () => {
   const { isAdmin, isScorer, user } = useAuth();
@@ -47,8 +47,8 @@ const MatchesPage = () => {
 
   const [formData, setFormData] = useState({
     tournamentId: '',
-    teamAId: '',
-    teamBId: '',
+    team1Id: '',
+    team2Id: '',
     sportType: 'CRICKET',
     matchDate: '',
     venue: '',
@@ -100,21 +100,20 @@ const MatchesPage = () => {
 
   useEffect(() => {
     if (searchParams.get('action') === 'new' && isAdmin) {
-      const tourId = searchParams.get('tournamentId');
-      openCreateModal(tourId);
+      openCreateModal();
     }
   }, [searchParams, isAdmin]);
 
-  const openCreateModal = (preselectedTourId = '') => {
+  const openCreateModal = () => {
     setIsEditing(false);
     setCurrentId(null);
     setFormData({
-      tournamentId: preselectedTourId || (tournaments[0]?.id ? String(tournaments[0].id) : ''),
-      teamAId: teams[0]?.id ? String(teams[0].id) : '',
-      teamBId: teams[1]?.id ? String(teams[1].id) : '',
-      sportType: 'CRICKET',
-      matchDate: new Date().toISOString().slice(0, 16),
-      venue: 'Main Sports Complex',
+      tournamentId: tournaments[0]?.id ? String(tournaments[0].id) : '',
+      team1Id: teams[0]?.id ? String(teams[0].id) : '',
+      team2Id: teams[1]?.id ? String(teams[1].id) : '',
+      sportType: tournaments[0]?.sportType || 'CRICKET',
+      matchDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
+      venue: 'Main Campus Stadium',
       scorerId: '',
       status: 'UPCOMING'
     });
@@ -125,13 +124,16 @@ const MatchesPage = () => {
   const openEditModal = (m) => {
     setIsEditing(true);
     setCurrentId(m.id);
+    const mTeam1 = m.team1Id || m.teamAId || m.team1?.id || m.teamA?.id || '';
+    const mTeam2 = m.team2Id || m.teamBId || m.team2?.id || m.teamB?.id || '';
+
     setFormData({
       tournamentId: String(m.tournamentId),
-      teamAId: String(m.teamAId),
-      teamBId: String(m.teamBId),
+      team1Id: String(mTeam1),
+      team2Id: String(mTeam2),
       sportType: m.sportType,
-      matchDate: new Date(m.matchDate).toISOString().slice(0, 16),
-      venue: m.venue,
+      matchDate: m.matchDate ? new Date(m.matchDate).toISOString().slice(0, 16) : '',
+      venue: m.venue || '',
       scorerId: m.scorerId ? String(m.scorerId) : '',
       status: m.status
     });
@@ -139,10 +141,10 @@ const MatchesPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleFormSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.teamAId === formData.teamBId) {
-      setFormError('A team cannot play against itself. Please choose two distinct teams.');
+    if (formData.team1Id === formData.team2Id) {
+      setFormError('Team 1 and Team 2 must be different teams.');
       return;
     }
 
@@ -150,15 +152,21 @@ const MatchesPage = () => {
     setFormError('');
 
     try {
+      const payload = {
+        ...formData,
+        teamAId: formData.team1Id,
+        teamBId: formData.team2Id
+      };
+
       if (isEditing) {
-        await matchService.update(currentId, formData);
+        await matchService.update(currentId, payload);
       } else {
-        await matchService.create(formData);
+        await matchService.create(payload);
       }
       setIsModalOpen(false);
       fetchMatches();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Operation failed.');
+      setFormError(err.response?.data?.message || 'Failed to save match.');
     } finally {
       setFormLoading(false);
     }
@@ -175,23 +183,23 @@ const MatchesPage = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Calendar className="w-6 h-6 text-cyan-500" />
-            <span>Match Schedule & Fixtures</span>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Calendar className="w-6 h-6 text-[#4cd7f6]" />
+            <span>Fixtures & Match Schedules</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Tournament schedules, match venues, official scorers, and live statuses
+          <p className="text-xs text-[#8c909f] mt-1">
+            Complete collegiate fixtures calendar, scheduled rounds, and referee assignments
           </p>
         </div>
 
         {isAdmin && (
           <button
-            onClick={() => openCreateModal()}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95"
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow-sm active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Schedule New Match</span>
@@ -199,200 +207,183 @@ const MatchesPage = () => {
         )}
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-navy-900 p-4 rounded-2xl border border-slate-800">
-        <div className="w-full md:w-64 relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+      {/* Filter and Search Ribbon */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-4 relative">
+          <Search className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search venue or teams..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            placeholder="Search teams or venues..."
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded pl-9 pr-3 py-2 text-xs text-[#dee2f4] placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none"
-            >
-              <option value="ALL">All Status</option>
-              <option value="LIVE">Live</option>
-              <option value="UPCOMING">Upcoming</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
+        <div className="lg:col-span-3">
+          <select
+            value={sportFilter}
+            onChange={(e) => setSportFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-[#dee2f4] focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Sports</option>
+            <option value="CRICKET">Cricket</option>
+            <option value="FOOTBALL">Football</option>
+            <option value="BASKETBALL">Basketball</option>
+          </select>
+        </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400">Sport:</span>
-            <select
-              value={sportFilter}
-              onChange={(e) => setSportFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none"
-            >
-              <option value="ALL">All Sports</option>
-              <option value="CRICKET">Cricket</option>
-              <option value="FOOTBALL">Football</option>
-              <option value="BASKETBALL">Basketball</option>
-            </select>
-          </div>
+        <div className="lg:col-span-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-[#dee2f4] focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="LIVE">Live Matches</option>
+            <option value="UPCOMING">Upcoming Fixtures</option>
+            <option value="COMPLETED">Completed Results</option>
+          </select>
+        </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-400">Tournament:</span>
-            <select
-              value={tournamentFilter}
-              onChange={(e) => setTournamentFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 focus:outline-none max-w-[160px] truncate"
-            >
-              <option value="ALL">All Tournaments</option>
-              {tournaments.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
+        <div className="lg:col-span-2">
+          <select
+            value={tournamentFilter}
+            onChange={(e) => setTournamentFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-[#dee2f4] focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Tournaments</option>
+            {tournaments.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Matches Grid */}
       {loading ? (
-        <div className="text-center py-12 text-slate-500 text-xs">Loading fixtures...</div>
+        <div className="py-20 text-center text-xs font-mono text-[#8c909f]">
+          Loading fixtures calendar...
+        </div>
       ) : matches.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-navy-900 border border-slate-800 text-center">
-          <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+        <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-12 text-center space-y-3">
+          <Calendar className="w-10 h-10 text-[#8c909f] mx-auto opacity-50" />
           <h3 className="text-sm font-bold text-white">No matches found</h3>
-          <p className="text-xs text-slate-400 mt-1">Try clearing filters or schedule a new match.</p>
+          <p className="text-xs text-[#8c909f]">
+            Try clearing filters or schedule a new fixture.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {matches.map((m) => (
-            <div
-              key={m.id}
-              className={`rounded-2xl bg-navy-900 border transition-all flex flex-col justify-between shadow-lg ${
-                m.status === 'LIVE' ? 'border-blue-500/50 bg-gradient-to-br from-navy-900 to-blue-950/20' : 'border-slate-800'
-              }`}
-            >
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
-                  <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-[10px] ${getSportBadgeClass(m.sportType)}`}>
-                    {m.sportType}
-                  </span>
-                  <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {matches.map((m) => {
+            const team1 = m.team1 || m.teamA;
+            const team2 = m.team2 || m.teamB;
+
+            return (
+              <div
+                key={m.id}
+                className="rounded-xl bg-[#1a1f2c] border border-[#252a37] hover:border-[#4d8eff]/50 p-4 sm:p-5 flex flex-col justify-between shadow-lg transition-all space-y-3.5"
+              >
+                <div className="space-y-3">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#4cd7f6] uppercase tracking-wider">
+                      {m.sportType}
+                    </span>
                     {m.status === 'LIVE' ? (
-                      <LiveBadge />
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/15 text-red-400 font-label-sm text-[10px] font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        <span>LIVE NOW</span>
+                      </div>
                     ) : (
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${getStatusBadgeClass(m.status)}`}>
+                      <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#8c909f] uppercase">
                         {m.status}
                       </span>
                     )}
                   </div>
+
+                  <p className="text-xs text-[#8c909f] truncate font-semibold">
+                    {m.tournament?.name || 'Championship Match'}
+                  </p>
+
+                  {/* Matchup Banner */}
+                  <div className="p-3 rounded-lg bg-[#090e1a] border border-[#1a1f2c] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm font-bold text-white truncate">{team1?.name}</span>
+                      <span className="font-score-display text-sm font-bold text-white font-mono">
+                        {m.sportType === 'CRICKET' && (m.cricketScore || m.score)
+                          ? `${(m.cricketScore || m.score).team1Runs ?? (m.cricketScore || m.score).teamARuns ?? 0}/${(m.cricketScore || m.score).team1Wickets ?? (m.cricketScore || m.score).teamAWickets ?? 0}`
+                          : m.sportType === 'FOOTBALL' && (m.footballScore || m.score)
+                          ? (m.footballScore || m.score).team1Goals ?? (m.footballScore || m.score).teamAGoals ?? 0
+                          : m.sportType === 'BASKETBALL' && (m.basketballScore || m.score)
+                          ? (m.basketballScore || m.score).team1Score ?? (m.basketballScore || m.score).teamAPoints ?? 0
+                          : '-'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm font-semibold text-[#c2c6d6] truncate">{team2?.name}</span>
+                      <span className="font-score-display text-sm font-bold text-[#c2c6d6] font-mono">
+                        {m.sportType === 'CRICKET' && (m.cricketScore || m.score)
+                          ? `${(m.cricketScore || m.score).team2Runs ?? (m.cricketScore || m.score).teamBRuns ?? 0}/${(m.cricketScore || m.score).team2Wickets ?? (m.cricketScore || m.score).teamBWickets ?? 0}`
+                          : m.sportType === 'FOOTBALL' && (m.footballScore || m.score)
+                          ? (m.footballScore || m.score).team2Goals ?? (m.footballScore || m.score).teamBGoals ?? 0
+                          : m.sportType === 'BASKETBALL' && (m.basketballScore || m.score)
+                          ? (m.basketballScore || m.score).team2Score ?? (m.basketballScore || m.score).teamBPoints ?? 0
+                          : '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Metadata info */}
+                  <div className="space-y-1 text-xs text-[#8c909f]">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-[#4cd7f6] shrink-0" />
+                      <span>{formatDateTime(m.matchDate)}</span>
+                    </div>
+                    {m.venue && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-[#8c909f] shrink-0" />
+                        <span className="truncate">{m.venue}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-xs text-slate-400 truncate">{m.tournament?.name}</p>
-
-                {/* Team Matchup Cards */}
-                <div className="space-y-3 py-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={m.teamA.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamA.name}`}
-                        alt={m.teamA.name}
-                        className="w-7 h-7 rounded-lg bg-slate-800 p-0.5 border border-slate-700 object-cover"
-                      />
-                      <span className="text-sm font-bold text-white truncate max-w-[150px]">{m.teamA.name}</span>
-                    </div>
-                    <span className="text-base font-black text-white font-mono">
-                      {m.sportType === 'CRICKET' && m.score
-                        ? `${m.score.teamARuns}/${m.score.teamAWickets}`
-                        : m.sportType === 'FOOTBALL' && m.score
-                        ? m.score.teamAGoals
-                        : m.sportType === 'BASKETBALL' && m.score
-                        ? m.score.teamAPoints
-                        : '-'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={m.teamB.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamB.name}`}
-                        alt={m.teamB.name}
-                        className="w-7 h-7 rounded-lg bg-slate-800 p-0.5 border border-slate-700 object-cover"
-                      />
-                      <span className="text-sm font-bold text-white truncate max-w-[150px]">{m.teamB.name}</span>
-                    </div>
-                    <span className="text-base font-black text-white font-mono">
-                      {m.sportType === 'CRICKET' && m.score
-                        ? `${m.score.teamBRuns}/${m.score.teamBWickets}`
-                        : m.sportType === 'FOOTBALL' && m.score
-                        ? m.score.teamBGoals
-                        : m.sportType === 'BASKETBALL' && m.score
-                        ? m.score.teamBPoints
-                        : '-'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1 text-xs text-slate-400 pt-2 border-t border-slate-800/80">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span>{formatDateTime(m.matchDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span className="truncate">{m.venue}</span>
-                  </div>
-                  {m.scorer && (
-                    <div className="text-[11px] text-slate-500">
-                      Scorer: <strong className="text-slate-400 font-normal">{m.scorer.name}</strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Actions */}
-              <div className="px-6 py-3.5 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+                {/* Footer Actions */}
+                <div className="pt-3 border-t border-[#252a37] flex items-center justify-between">
                   <Link
                     to={`/scoreboard/${m.id}`}
-                    className="font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                    className="font-bold text-xs text-[#4cd7f6] hover:underline flex items-center gap-1"
                   >
-                    <span>{m.status === 'LIVE' ? 'Watch Live' : 'Match Details'}</span>
+                    <span>Match Center</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
-                  {(isAdmin || (isScorer && m.scorerId === user?.id)) && (
-                    <Link
-                      to={`/scoreboard/${m.id}?mode=scorer`}
-                      className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-300 text-[10px] font-semibold hover:bg-blue-600/30"
-                    >
-                      Score
-                    </Link>
+
+                  {isAdmin && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditModal(m)}
+                        aria-label="Edit"
+                        className="p-1.5 rounded hover:bg-[#252a37] text-[#8c909f] hover:text-white transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteDialog({ isOpen: true, id: m.id, name: `${team1?.name} vs ${team2?.name}` })}
+                        aria-label="Delete"
+                        className="p-1.5 rounded hover:bg-red-500/10 text-[#8c909f] hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
-
-                {isAdmin && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => openEditModal(m)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteDialog({ isOpen: true, id: m.id, name: `${m.teamA.name} vs ${m.teamB.name}` })}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -400,70 +391,83 @@ const MatchesPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isEditing ? 'Edit Match Schedule' : 'Schedule Match'}
+        title={isEditing ? 'Edit Match Schedule' : 'Schedule New Match'}
       >
-        {formError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {formError && (
+            <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Tournament</label>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Tournament *</label>
             <select
               required
               value={formData.tournamentId}
-              onChange={(e) => setFormData({ ...formData, tournamentId: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              onChange={(e) => {
+                const sel = tournaments.find((t) => String(t.id) === e.target.value);
+                setFormData({
+                  ...formData,
+                  tournamentId: e.target.value,
+                  sportType: sel?.sportType || formData.sportType
+                });
+              }}
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             >
               <option value="">-- Select Tournament --</option>
               {tournaments.map((t) => (
-                <option key={t.id} value={t.id}>{t.name} ({t.sportType})</option>
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.sportType})
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Team A (Home)</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Team 1 *</label>
               <select
                 required
-                value={formData.teamAId}
-                onChange={(e) => setFormData({ ...formData, teamAId: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                value={formData.team1Id}
+                onChange={(e) => setFormData({ ...formData, team1Id: e.target.value })}
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               >
-                <option value="">-- Choose Team A --</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
+                <option value="">-- Select Team 1 --</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Team B (Away)</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Team 2 *</label>
               <select
                 required
-                value={formData.teamBId}
-                onChange={(e) => setFormData({ ...formData, teamBId: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                value={formData.team2Id}
+                onChange={(e) => setFormData({ ...formData, team2Id: e.target.value })}
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               >
-                <option value="">-- Choose Team B --</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
+                <option value="">-- Select Team 2 --</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Sport Type</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Sport Type *</label>
               <select
                 value={formData.sportType}
                 onChange={(e) => setFormData({ ...formData, sportType: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               >
                 <option value="CRICKET">Cricket</option>
                 <option value="FOOTBALL">Football</option>
@@ -472,85 +476,87 @@ const MatchesPage = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Match Status</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Status</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               >
                 <option value="UPCOMING">Upcoming</option>
                 <option value="LIVE">Live</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Date & Time</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Date & Time *</label>
               <input
                 type="datetime-local"
                 required
                 value={formData.matchDate}
                 onChange={(e) => setFormData({ ...formData, matchDate: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Venue / Stadium</label>
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Venue / Ground</label>
               <input
                 type="text"
-                required
                 value={formData.venue}
                 onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                placeholder="e.g., Main Pitch"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+                placeholder="e.g. Pitch A • Stadium"
+                className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Assign Official Scorer (Optional)</label>
+            <label className="block text-xs font-semibold text-[#dee2f4] mb-1">Assign Official Scorer</label>
             <select
               value={formData.scorerId}
               onChange={(e) => setFormData({ ...formData, scorerId: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-[#090e1a] border border-[#252a37] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#4d8eff]"
             >
-              <option value="">-- No specific scorer assigned --</option>
+              <option value="">-- Any Scorer / Open --</option>
               {scorers.map((s) => (
-                <option key={s.id} value={s.id}>{s.name} ({s.email})</option>
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.email})
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#252a37]">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              className="px-3 py-1.5 rounded text-xs font-semibold text-[#c2c6d6] hover:bg-[#252a37]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={formLoading}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95 disabled:opacity-50"
+              className="px-4 py-1.5 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs"
             >
-              {formLoading ? 'Saving...' : isEditing ? 'Update Match' : 'Schedule Match'}
+              {formLoading ? 'Saving...' : isEditing ? 'Save Changes' : 'Schedule Match'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Dialog */}
+      {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={deleteDialog.isOpen}
-        onClose={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
-        onConfirm={handleDelete}
         title="Delete Match"
-        message={`Are you sure you want to delete ${deleteDialog.name}? Scores and events recorded for this match will also be deleted.`}
+        message={`Are you sure you want to delete match "${deleteDialog.name}"? This will delete all live scoring snapshots.`}
+        confirmText="Delete Fixture"
+        confirmVariant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
       />
     </div>
   );

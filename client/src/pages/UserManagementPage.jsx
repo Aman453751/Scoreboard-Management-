@@ -62,136 +62,141 @@ const UserManagementPage = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-blue-500" />
-            <span>User Management & Authorization</span>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-[#4cd7f6]" />
+            <span>User Management & RBAC Permissions</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Assign official scorer roles, promote admins, or manage student viewer accounts
+          <p className="text-xs text-[#8c909f] mt-1">
+            Manage user accounts, assign Scorer permissions, and regulate platform access
           </p>
         </div>
       </div>
 
-      {/* Filter / Search Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-navy-900 p-4 rounded-2xl border border-slate-800">
-        <div className="w-full md:w-64 relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+      {/* Filter and Search Ribbon */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <div className="sm:col-span-8 relative">
+          <Search className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, email or college..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            placeholder="Search users by name, email, or department..."
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded pl-9 pr-3 py-2 text-xs text-[#dee2f4] placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Filter Role:</span>
-          {['ALL', 'ADMIN', 'SCORER', 'VIEWER'].map((r) => (
-            <button
-              key={r}
-              onClick={() => setRoleFilter(r)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                roleFilter === r
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
+        <div className="sm:col-span-4">
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="w-full bg-[#1a1f2c] border border-[#252a37] rounded px-3 py-2 text-xs text-[#dee2f4] focus:outline-none focus:border-[#4d8eff]"
+          >
+            <option value="ALL">All Roles</option>
+            <option value="ADMIN">Administrators</option>
+            <option value="SCORER">Official Scorers</option>
+            <option value="VIEWER">Students & Viewers</option>
+          </select>
         </div>
       </div>
 
-      {/* User Table */}
-      <div className="rounded-2xl bg-navy-900 border border-slate-800 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-slate-800">
-              <tr>
-                <th className="py-3.5 px-4">User</th>
-                <th className="py-3.5 px-4">College</th>
-                <th className="py-3.5 px-4">Role Designation</th>
-                <th className="py-3.5 px-4">Assigned Fixtures</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 font-medium text-slate-300">
-              {loading ? (
+      {/* Users Data Table */}
+      <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] overflow-hidden shadow-lg">
+        {loading ? (
+          <div className="p-12 text-center text-xs font-mono text-[#8c909f]">
+            Loading user access control lists...
+          </div>
+        ) : users.length === 0 ? (
+          <div className="p-12 text-center text-xs text-[#8c909f]">
+            No user accounts found matching your query.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#090e1a] text-[#8c909f] uppercase font-label-sm text-[11px] tracking-wider border-b border-[#252a37]">
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">Loading accounts...</td>
+                  <th className="py-2.5 px-4">User</th>
+                  <th className="py-2.5 px-4">Email</th>
+                  <th className="py-2.5 px-4">College</th>
+                  <th className="py-2.5 px-4">Current Role</th>
+                  <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500 italic">No users found.</td>
-                </tr>
-              ) : (
-                users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={u.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name)}`}
-                          alt={u.name}
-                          className="w-8 h-8 rounded-full bg-slate-800 object-cover border border-slate-700"
-                        />
-                        <div>
-                          <p className="font-bold text-white">{u.name}</p>
-                          <p className="text-[11px] text-slate-400">{u.email}</p>
+              </thead>
+              <tbody className="divide-y divide-[#252a37]">
+                {users.map((u) => {
+                  const isSelf = u.id === currentAdmin?.id;
+
+                  return (
+                    <tr key={u.id} className="hover:bg-[#161b28] transition-colors">
+                      <td className="py-3 px-4 font-bold text-white">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-[#4d8eff] text-[#00285d] flex items-center justify-center font-bold text-xs shrink-0">
+                            {u.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <span>{u.name}</span>
+                            {isSelf && (
+                              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#4edea3]/20 text-[#4edea3]">
+                                YOU
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400">{u.college || 'N/A'}</td>
-                    <td className="py-3.5 px-4">
-                      <select
-                        value={u.role}
-                        disabled={u.id === currentAdmin?.id}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border focus:outline-none ${
-                          u.role === 'ADMIN'
-                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                            : u.role === 'SCORER'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                            : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                        }`}
-                      >
-                        <option value="VIEWER">VIEWER</option>
-                        <option value="SCORER">SCORER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-400">
-                      {u._count?.assignedMatches ?? 0} matches
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      {u.id !== currentAdmin?.id && (
-                        <button
-                          onClick={() => setDeleteDialog({ isOpen: true, id: u.id, name: u.name })}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                          title="Delete User"
+                      </td>
+
+                      <td className="py-3 px-4 font-mono text-[#c2c6d6] text-[11px]">
+                        {u.email}
+                      </td>
+
+                      <td className="py-3 px-4 text-[#8c909f]">
+                        {u.college || 'Apex Institute'}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <select
+                          value={u.role}
+                          disabled={isSelf}
+                          onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                          className="bg-[#090e1a] border border-[#252a37] rounded px-2.5 py-1 text-xs text-white focus:outline-none focus:border-[#4d8eff] disabled:opacity-50"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                          <option value="VIEWER">VIEWER</option>
+                          <option value="SCORER">SCORER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </td>
+
+                      <td className="py-3 px-4 text-right">
+                        {!isSelf && (
+                          <button
+                            onClick={() => setDeleteDialog({ isOpen: true, id: u.id, name: u.name })}
+                            className="p-1.5 rounded hover:bg-red-500/10 text-[#8c909f] hover:text-red-400 transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
+      {/* Delete User Confirmation */}
       <ConfirmDialog
         isOpen={deleteDialog.isOpen}
-        onClose={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
-        onConfirm={handleDeleteUser}
         title="Delete User Account"
-        message={`Are you sure you want to delete ${deleteDialog.name}'s account? This user will no longer be able to sign in.`}
+        message={`Are you sure you want to delete user "${deleteDialog.name}"? This action cannot be reversed.`}
+        confirmText="Delete Account"
+        confirmVariant="danger"
+        onConfirm={handleDeleteUser}
+        onCancel={() => setDeleteDialog({ isOpen: false, id: null, name: '' })}
       />
     </div>
   );

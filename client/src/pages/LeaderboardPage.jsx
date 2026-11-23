@@ -87,171 +87,181 @@ const LeaderboardPage = () => {
   const activeTournament = tournaments.find((t) => String(t.id) === String(selectedTournamentId));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Award className="w-6 h-6 text-amber-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Award className="w-6 h-6 text-[#4cd7f6]" />
             <span>Tournament Leaderboards & Standings</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time points table, win rates, goal differential, and net run rates
+          <p className="text-xs text-[#8c909f] mt-1">
+            Real-time points table, win rates, goal differential, and net run rates computed automatically
           </p>
         </div>
 
-        {(isAdmin || isScorer) && (
+        {(isAdmin || isScorer) && activeTournament && (
           <button
             onClick={handleRecalculate}
-            disabled={recalculating || !selectedTournamentId}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 active:scale-95 disabled:opacity-50"
+            disabled={recalculating}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-[#1a1f2c] hover:bg-[#252a37] border border-[#252a37] text-xs font-semibold text-[#dee2f4] transition-colors"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${recalculating ? 'animate-spin text-blue-400' : ''}`} />
-            <span>Recalculate Points Table</span>
+            <RotateCw className={`w-3.5 h-3.5 text-[#4cd7f6] ${recalculating ? 'animate-spin' : ''}`} />
+            <span>{recalculating ? 'Recalculating...' : 'Recalculate Table'}</span>
           </button>
         )}
       </div>
 
-      {/* Tournament Selector Bar */}
-      <div className="flex flex-wrap items-center gap-2.5 bg-navy-900 p-3 rounded-2xl border border-slate-800">
-        <span className="text-xs font-semibold text-slate-400 px-2 flex items-center gap-1.5">
-          <Trophy className="w-3.5 h-3.5 text-amber-400" />
-          Tournament:
-        </span>
+      {/* Tournament Selector Ribbon */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {tournaments.map((t) => (
           <button
             key={t.id}
             onClick={() => handleTournamentChange(String(t.id))}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded text-xs font-semibold whitespace-nowrap transition-all ${
               String(t.id) === String(selectedTournamentId)
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700'
+                ? 'bg-[#4d8eff] text-[#00285d] shadow'
+                : 'bg-[#1a1f2c] border border-[#252a37] text-[#c2c6d6] hover:bg-[#252a37]'
             }`}
           >
-            {t.name}
+            <Trophy className="w-3.5 h-3.5" />
+            <span>{t.name}</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] uppercase font-mono ${
+              String(t.id) === String(selectedTournamentId) ? 'bg-[#00285d]/30 text-white' : 'bg-[#252a37] text-[#8c909f]'
+            }`}>
+              {t.sportType}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Top 3 Podium Cards */}
-      {leaderboard.length >= 2 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          {leaderboard.slice(0, 3).map((item, index) => {
-            const medals = ['🥇 1st Place', '🥈 2nd Place', '🥉 3rd Place'];
-            const colors = [
-              'border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-transparent',
-              'border-slate-400/30 bg-gradient-to-b from-slate-400/5 to-transparent',
-              'border-orange-500/30 bg-gradient-to-b from-orange-500/5 to-transparent'
-            ];
-            return (
-              <div
-                key={item.id}
-                className={`p-5 rounded-2xl border ${colors[index]} flex items-center gap-4 shadow-lg`}
-              >
-                <img
-                  src={item.team.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${item.team.name}`}
-                  alt={item.team.name}
-                  className="w-14 h-14 rounded-2xl bg-slate-800 p-1 border border-slate-700 object-cover shadow-md"
-                />
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
-                    {medals[index]}
-                  </span>
-                  <h4 className="text-base font-bold text-white tracking-tight line-clamp-1 mt-0.5">
-                    {item.team.name}
-                  </h4>
-                  <div className="flex items-center gap-2 mt-1 text-xs">
-                    <span className="font-black text-white font-mono text-base">{item.points} PTS</span>
-                    <span className="text-slate-500">•</span>
-                    <span className="text-emerald-400 font-mono">{item.won}W - {item.lost}L</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Standings Table Container (Stitch Design Specification) */}
+      <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] overflow-hidden shadow-lg">
+        <div className="p-4 sm:p-5 border-b border-[#252a37] flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <span>{activeTournament?.name || 'Tournament Standings'}</span>
+              <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#4cd7f6] uppercase">
+                {activeTournament?.sportType}
+              </span>
+            </h2>
+            <p className="text-xs text-[#8c909f] mt-0.5">
+              Standings update in real time with every verified match score
+            </p>
+          </div>
 
-      {/* Leaderboard Table */}
-      <div className="rounded-2xl bg-navy-900 border border-slate-800 overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
-            <span>{activeTournament?.name || 'Tournament'} Points Standing</span>
-          </h3>
-          <span className="text-xs font-mono text-slate-400">
-            {activeTournament?.sportType}
-          </span>
+          <div className="flex items-center gap-2 text-xs font-mono text-[#8c909f]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span>
+            <span>Live Points Table Engine Active</span>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-slate-800">
-              <tr>
-                <th className="py-3 px-4">Rank</th>
-                <th className="py-3 px-4">Team</th>
-                <th className="py-3 px-3 text-center">Played</th>
-                <th className="py-3 px-3 text-center text-emerald-400">Won</th>
-                <th className="py-3 px-3 text-center text-rose-400">Lost</th>
-                <th className="py-3 px-3 text-center">Drawn</th>
-                <th className="py-3 px-3 text-center font-bold text-white">Points</th>
-                <th className="py-3 px-4 text-right">
-                  {activeTournament?.sportType === 'CRICKET' ? 'Net Run Rate' : 'Goal Difference'}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 font-medium text-slate-300">
-              {leaderboard.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center text-xs font-mono text-[#8c909f]">
+            Computing tournament telemetry...
+          </div>
+        ) : leaderboard.length === 0 ? (
+          <div className="p-12 text-center text-xs text-[#8c909f]">
+            No completed matches in this tournament yet. Scores will be reflected as soon as fixtures are played.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#090e1a] text-[#8c909f] uppercase font-label-sm text-[11px] tracking-wider border-b border-[#252a37]">
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500 italic">
-                    No leaderboard standings calculated yet. Points update automatically as matches complete.
-                  </td>
+                  <th className="py-3 px-4 w-14 text-center">Rank</th>
+                  <th className="py-3 px-4">Team</th>
+                  <th className="py-3 px-3 text-right">P</th>
+                  <th className="py-3 px-3 text-right">W</th>
+                  <th className="py-3 px-3 text-right">L</th>
+                  <th className="py-3 px-3 text-right">D</th>
+                  {activeTournament?.sportType === 'CRICKET' ? (
+                    <th className="py-3 px-3 text-right">NRR</th>
+                  ) : activeTournament?.sportType === 'FOOTBALL' ? (
+                    <>
+                      <th className="py-3 px-3 text-right">GF</th>
+                      <th className="py-3 px-3 text-right">GA</th>
+                      <th className="py-3 px-3 text-right">GD</th>
+                    </>
+                  ) : (
+                    <th className="py-3 px-3 text-right">Diff</th>
+                  )}
+                  <th className="py-3 px-4 text-right font-bold text-[#dee2f4]">PTS</th>
                 </tr>
-              ) : (
-                leaderboard.map((item, idx) => (
-                  <tr
-                    key={item.id}
-                    className={`hover:bg-slate-800/40 transition-colors ${
-                      idx === 0 ? 'bg-blue-600/5' : ''
-                    }`}
-                  >
-                    <td className="py-3.5 px-4 font-mono font-bold text-white">
-                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${
-                        idx === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'text-slate-400'
-                      }`}>
-                        {item.rank || idx + 1}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <Link
-                        to={`/teams/${item.team.id}`}
-                        className="font-bold text-white hover:text-blue-400 flex items-center gap-2.5"
-                      >
-                        <img
-                          src={item.team.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${item.team.name}`}
-                          alt={item.team.name}
-                          className="w-6 h-6 rounded-md object-cover"
-                        />
-                        <span>{item.team.name}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">({item.team.college})</span>
-                      </Link>
-                    </td>
-                    <td className="py-3.5 px-3 text-center font-mono">{item.played}</td>
-                    <td className="py-3.5 px-3 text-center font-mono text-emerald-400 font-bold">{item.won}</td>
-                    <td className="py-3.5 px-3 text-center font-mono text-rose-400">{item.lost}</td>
-                    <td className="py-3.5 px-3 text-center font-mono text-slate-400">{item.drawn}</td>
-                    <td className="py-3.5 px-3 text-center font-mono text-base font-black text-white bg-slate-800/40">
-                      {item.points}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-slate-400">
-                      {item.goalDiffOrNRR >= 0 ? `+${item.goalDiffOrNRR}` : item.goalDiffOrNRR}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[#252a37]">
+                {leaderboard.map((row, index) => {
+                  const isTop3 = index < 3;
+                  const rankBadgeClass =
+                    index === 0
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : index === 1
+                      ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30'
+                      : index === 2
+                      ? 'bg-amber-700/20 text-amber-500 border border-amber-700/30'
+                      : 'text-[#8c909f]';
+
+                  return (
+                    <tr
+                      key={row.id || row.teamId}
+                      className="hover:bg-[#161b28] transition-colors"
+                    >
+                      {/* Rank */}
+                      <td className="py-3 px-4 text-center font-mono font-bold">
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs ${rankBadgeClass}`}>
+                          {index + 1}
+                        </span>
+                      </td>
+
+                      {/* Team Name */}
+                      <td className="py-3 px-4">
+                        <Link
+                          to={`/teams/${row.teamId}`}
+                          className="flex items-center gap-2.5 font-bold text-[#dee2f4] hover:text-[#4cd7f6] transition-colors"
+                        >
+                          <div className="w-6 h-6 rounded bg-[#252a37] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                            {row.team?.name?.substring(0, 2).toUpperCase() || 'TM'}
+                          </div>
+                          <span>{row.team?.name}</span>
+                        </Link>
+                      </td>
+
+                      {/* Played, Won, Lost, Draw */}
+                      <td className="py-3 px-3 text-right font-mono text-[#c2c6d6] tabular-nums">{row.played}</td>
+                      <td className="py-3 px-3 text-right font-mono text-[#4edea3] font-semibold tabular-nums">{row.won}</td>
+                      <td className="py-3 px-3 text-right font-mono text-[#ffb4ab] tabular-nums">{row.lost}</td>
+                      <td className="py-3 px-3 text-right font-mono text-[#8c909f] tabular-nums">{row.drawn}</td>
+
+                      {/* Sport specific statistics */}
+                      {activeTournament?.sportType === 'CRICKET' ? (
+                        <td className="py-3 px-3 text-right font-mono text-[#4cd7f6] tabular-nums">
+                          {row.netRunRate ? row.netRunRate.toFixed(3) : '0.000'}
+                        </td>
+                      ) : activeTournament?.sportType === 'FOOTBALL' ? (
+                        <>
+                          <td className="py-3 px-3 text-right font-mono text-[#c2c6d6] tabular-nums">{row.goalsFor ?? 0}</td>
+                          <td className="py-3 px-3 text-right font-mono text-[#8c909f] tabular-nums">{row.goalsAgainst ?? 0}</td>
+                          <td className="py-3 px-3 text-right font-mono font-semibold text-[#4cd7f6] tabular-nums">
+                            {(row.goalDifference ?? 0) > 0 ? `+${row.goalDifference}` : row.goalDifference ?? 0}
+                          </td>
+                        </>
+                      ) : (
+                        <td className="py-3 px-3 text-right font-mono text-[#4cd7f6] tabular-nums">
+                          {row.pointsDiff ?? 0}
+                        </td>
+                      )}
+
+                      {/* Total Points */}
+                      <td className="py-3 px-4 text-right font-mono font-bold text-base text-white tabular-nums">
+                        {row.points}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

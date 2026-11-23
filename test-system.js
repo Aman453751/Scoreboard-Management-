@@ -136,14 +136,27 @@ async function runTests() {
   }
 }
 
-// Start backend server internally for testing
-const { server } = require('./server/src/server');
+// Check if port 5000 is already running
+const net = require('net');
+const client = new net.Socket();
 
-// Wait 1 second for port listening then run tests
-setTimeout(async () => {
+client.once('connect', async () => {
+  client.destroy();
+  console.log('Detected existing server running on port 5000. Running tests against live instance...');
   await runTests();
-  server.close(() => {
-    console.log('Test runner finished and closed test server connection.');
-    process.exit(0);
-  });
-}, 1000);
+  process.exit(0);
+});
+
+client.once('error', (err) => {
+  console.log('Starting internal server on port 5000 for test suite...');
+  const { server } = require('./server/src/server');
+  setTimeout(async () => {
+    await runTests();
+    server.close(() => {
+      console.log('Test runner finished and closed test server connection.');
+      process.exit(0);
+    });
+  }, 1000);
+});
+
+client.connect(PORT, '127.0.0.1');

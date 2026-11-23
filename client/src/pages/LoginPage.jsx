@@ -50,61 +50,61 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Card */}
-        <div className="rounded-3xl bg-navy-900 border border-slate-700/80 p-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
-
+    <div className="min-h-[75vh] flex items-center justify-center py-8 px-4">
+      <div className="w-full max-w-md space-y-5">
+        {/* Card (Stitch Surface) */}
+        <div className="rounded-xl bg-[#1a1f2c] border border-[#252a37] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
           {/* Logo & Heading */}
-          <div className="text-center space-y-2 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
-              <Trophy className="w-6 h-6 text-white" />
+          <div className="text-center space-y-1.5 mb-6">
+            <div className="w-10 h-10 rounded-lg bg-[#252a37] border border-[#343947] flex items-center justify-center mx-auto text-[#4cd7f6] shadow">
+              <Trophy className="w-5 h-5" />
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight">Sign In to OmniScore</h2>
-            <p className="text-xs text-slate-400">
-              Sports Scoreboard & Tournament Management System
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Sign In to OmniScore
+            </h2>
+            <p className="text-xs text-[#8c909f]">
+              Collegiate Sports Scoreboard & Tournament Platform
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="mb-4 p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Mail className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@scoreboard.edu"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="admin@omniscore.edu"
+                  className="w-full bg-[#090e1a] border border-[#252a37] rounded pl-9 pr-3 py-2 text-xs text-white placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-[#dee2f4] mb-1">
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Lock className="w-4 h-4 text-[#8c909f] absolute left-3 top-3" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="••••••••"
+                  className="w-full bg-[#090e1a] border border-[#252a37] rounded pl-9 pr-3 py-2 text-xs text-white placeholder-[#8c909f] focus:outline-none focus:border-[#4d8eff]"
                 />
               </div>
             </div>
@@ -112,59 +112,52 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow transition-all active:scale-[0.98] disabled:opacity-50"
             >
-              {loading ? (
-                <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              {loading ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
 
-          {/* Quick Demo Credentials for College Presentation */}
-          <div className="mt-8 pt-6 border-t border-slate-800">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center mb-3">
-              One-Click Evaluation Credentials
-            </p>
+          {/* Quick Demo Credentials Strip */}
+          <div className="mt-6 pt-5 border-t border-[#252a37] space-y-2">
+            <span className="text-[10px] font-bold text-[#8c909f] uppercase tracking-wider block text-center">
+              Quick One-Click Demo Sign-In
+            </span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => handleFillDemo('admin@scoreboard.edu', 'AdminPassword123!')}
-                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700/60 font-medium text-center transition-colors"
+                onClick={() => handleFillDemo('admin@omniscore.edu', 'password123')}
+                className="py-1.5 px-2 rounded bg-[#090e1a] hover:bg-[#252a37] border border-[#252a37] text-center transition-colors"
               >
-                <span className="block font-bold text-white">Admin</span>
-                <span className="text-[10px] text-blue-400">Full Access</span>
+                <span className="block text-[11px] font-bold text-[#4cd7f6]">Admin</span>
+                <span className="block text-[9px] text-[#8c909f] font-mono">Full Access</span>
               </button>
-
               <button
                 type="button"
-                onClick={() => handleFillDemo('scorer1@scoreboard.edu', 'ScorerPassword123!')}
-                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700/60 font-medium text-center transition-colors"
+                onClick={() => handleFillDemo('scorer@omniscore.edu', 'password123')}
+                className="py-1.5 px-2 rounded bg-[#090e1a] hover:bg-[#252a37] border border-[#252a37] text-center transition-colors"
               >
-                <span className="block font-bold text-white">Scorer</span>
-                <span className="text-[10px] text-amber-400">Score Matches</span>
+                <span className="block text-[11px] font-bold text-[#4edea3]">Scorer</span>
+                <span className="block text-[9px] text-[#8c909f] font-mono">Live Scoring</span>
               </button>
-
               <button
                 type="button"
-                onClick={() => handleFillDemo('student@scoreboard.edu', 'StudentPassword123!')}
-                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700/60 font-medium text-center transition-colors"
+                onClick={() => handleFillDemo('viewer@omniscore.edu', 'password123')}
+                className="py-1.5 px-2 rounded bg-[#090e1a] hover:bg-[#252a37] border border-[#252a37] text-center transition-colors"
               >
-                <span className="block font-bold text-white">Viewer</span>
-                <span className="text-[10px] text-emerald-400">Student Watch</span>
+                <span className="block text-[11px] font-bold text-[#adc6ff]">Student</span>
+                <span className="block text-[9px] text-[#8c909f] font-mono">Spectator</span>
               </button>
             </div>
           </div>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-semibold">
-              Register now
-            </Link>
+          <div className="mt-4 text-center">
+            <p className="text-xs text-[#8c909f]">
+              Don&apos;t have an account?{' '}
+              <Link to="/register" className="text-[#4cd7f6] font-semibold hover:underline">
+                Register here
+              </Link>
+            </p>
           </div>
         </div>
       </div>

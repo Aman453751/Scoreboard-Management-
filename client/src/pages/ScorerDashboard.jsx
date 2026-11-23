@@ -55,29 +55,29 @@ const ScorerDashboard = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#252a37]">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Radio className="w-6 h-6 text-amber-500 animate-pulse" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Radio className="w-6 h-6 text-[#4cd7f6] animate-pulse" />
             <span>Official Scorer Workstation</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Logged in as <strong className="text-white">{user?.name}</strong>. Start fixtures, record real-time events, and finalize results.
+          <p className="text-xs text-[#8c909f] mt-1">
+            Logged in as <strong className="text-white">{user?.name}</strong>. Start fixtures, record real-time plays, and finalize results.
           </p>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2">
+        {/* Filter Ribbon */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {['ALL', 'MY_MATCHES', 'LIVE', 'UPCOMING'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded text-xs font-semibold whitespace-nowrap transition-colors ${
                 filter === f
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-[#4d8eff] text-[#00285d] shadow-sm'
+                  : 'bg-[#1a1f2c] border border-[#252a37] text-[#c2c6d6] hover:bg-[#252a37]'
               }`}
             >
               {f.replace('_', ' ')}
@@ -88,127 +88,102 @@ const ScorerDashboard = () => {
 
       {/* Match Cards for Scoring */}
       {filteredMatches.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-navy-900 border border-slate-800 text-center">
-          <Calendar className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+        <div className="p-12 rounded-xl bg-[#1a1f2c] border border-[#252a37] text-center space-y-2">
+          <Calendar className="w-8 h-8 text-[#8c909f] mx-auto opacity-50" />
           <h3 className="text-sm font-bold text-white">No matches found</h3>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#8c909f]">
             No fixtures match your current filter selection.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredMatches.map((m) => (
-            <div
-              key={m.id}
-              className={`p-6 rounded-2xl bg-navy-900 border transition-all ${
-                m.status === 'LIVE'
-                  ? 'border-blue-500/40 bg-gradient-to-br from-navy-900 to-blue-950/20 shadow-xl shadow-blue-500/5'
-                  : 'border-slate-800'
-              }`}
-            >
-              <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
-                <span className="px-2.5 py-0.5 rounded-md font-mono font-bold bg-slate-800 text-amber-400 border border-slate-700">
-                  {m.sportType}
-                </span>
-                <div className="flex items-center gap-2">
-                  {m.status === 'LIVE' ? (
-                    <LiveBadge />
-                  ) : (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-400">
-                      {m.status}
-                    </span>
-                  )}
-                  {m.scorerId === user?.id && (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      Assigned to You
-                    </span>
-                  )}
-                </div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredMatches.map((m) => {
+            const team1 = m.team1 || m.teamA;
+            const team2 = m.team2 || m.teamB;
 
-              {/* Tournament & Venue */}
-              <div className="my-3 text-xs text-slate-400">
-                <p className="font-semibold text-slate-300 truncate">{m.tournament?.name}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{m.venue}</p>
-              </div>
-
-              {/* Team Scores Display */}
-              <div className="space-y-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={m.teamA.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamA.name}`}
-                      alt={m.teamA.name}
-                      className="w-7 h-7 rounded-lg bg-slate-800 p-0.5 border border-slate-700"
-                    />
-                    <span className="text-sm font-bold text-white">{m.teamA.name}</span>
-                  </div>
-                  <span className="text-base font-black text-white font-mono">
-                    {m.sportType === 'CRICKET' && m.score
-                      ? `${m.score.teamARuns}/${m.score.teamAWickets}`
-                      : m.sportType === 'FOOTBALL' && m.score
-                      ? `${m.score.teamAGoals}`
-                      : m.sportType === 'BASKETBALL' && m.score
-                      ? `${m.score.teamAPoints}`
-                      : '-'}
+            return (
+              <div
+                key={m.id}
+                className="p-5 rounded-xl bg-[#1a1f2c] border border-[#252a37] hover:border-[#4d8eff]/50 transition-colors space-y-4 shadow-lg"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#252a37] text-[#4cd7f6] uppercase">
+                    {m.sportType} • {m.tournament?.name}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] uppercase ${
+                      m.status === 'LIVE'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        : m.status === 'COMPLETED'
+                        ? 'bg-[#4edea3]/20 text-[#4edea3] border border-[#4edea3]/30'
+                        : 'bg-[#252a37] text-[#8c909f]'
+                    }`}
+                  >
+                    {m.status}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={m.teamB.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${m.teamB.name}`}
-                      alt={m.teamB.name}
-                      className="w-7 h-7 rounded-lg bg-slate-800 p-0.5 border border-slate-700"
-                    />
-                    <span className="text-sm font-bold text-white">{m.teamB.name}</span>
-                  </div>
-                  <span className="text-base font-black text-white font-mono">
-                    {m.sportType === 'CRICKET' && m.score
-                      ? `${m.score.teamBRuns}/${m.score.teamBWickets}`
-                      : m.sportType === 'FOOTBALL' && m.score
-                      ? `${m.score.teamBGoals}`
-                      : m.sportType === 'BASKETBALL' && m.score
-                      ? `${m.score.teamBPoints}`
-                      : '-'}
+                <div className="p-3 rounded-lg bg-[#090e1a] border border-[#1a1f2c] flex items-center justify-between font-bold text-white text-sm">
+                  <span>{team1?.name}</span>
+                  <span className="font-score-display text-base text-[#4cd7f6] font-mono tabular-nums">
+                    {m.sportType === 'CRICKET' && (m.cricketScore || m.score)
+                      ? `${(m.cricketScore || m.score).team1Runs ?? (m.cricketScore || m.score).teamARuns ?? 0}/${(m.cricketScore || m.score).team1Wickets ?? (m.cricketScore || m.score).teamAWickets ?? 0}`
+                      : m.sportType === 'FOOTBALL' && (m.footballScore || m.score)
+                      ? `${(m.footballScore || m.score).team1Goals ?? (m.footballScore || m.score).teamAGoals ?? 0} - ${(m.footballScore || m.score).team2Goals ?? (m.footballScore || m.score).teamBGoals ?? 0}`
+                      : m.sportType === 'BASKETBALL' && (m.basketballScore || m.score)
+                      ? `${(m.basketballScore || m.score).team1Score ?? (m.basketballScore || m.score).teamAPoints ?? 0} - ${(m.basketballScore || m.score).team2Score ?? (m.basketballScore || m.score).teamBPoints ?? 0}`
+                      : 'VS'}
                   </span>
-                </div>
-              </div>
-
-              {/* Actions Footer */}
-              <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  {m.status === 'UPCOMING' && (
-                    <button
-                      onClick={() => handleStatusChange(m.id, 'LIVE')}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:scale-95"
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                      <span>Start Match (Go LIVE)</span>
-                    </button>
-                  )}
-
-                  {m.status === 'LIVE' && (
-                    <button
-                      onClick={() => handleStatusChange(m.id, 'COMPLETED')}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 active:scale-95"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Mark Final / End Match</span>
-                    </button>
-                  )}
+                  <span>{team2?.name}</span>
                 </div>
 
-                <Link
-                  to={`/scoreboard/${m.id}?mode=scorer`}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95"
-                >
-                  <span>Open Scorer Console</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#252a37]">
+                  <div className="text-xs text-[#8c909f] font-mono">
+                    {m.venue || 'Arena'}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {m.status === 'UPCOMING' && (
+                      <button
+                        onClick={() => handleStatusChange(m.id, 'LIVE')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#4edea3] hover:brightness-110 text-[#003824] font-bold text-xs shadow"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Start Match</span>
+                      </button>
+                    )}
+
+                    {m.status === 'LIVE' && (
+                      <>
+                        <Link
+                          to={`/scoreboard/${m.id}?mode=scorer`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#4d8eff] hover:bg-[#3b82f6] text-[#00285d] font-bold text-xs shadow active:scale-95 transition-all"
+                        >
+                          <Activity className="w-3.5 h-3.5" />
+                          <span>Scoring Console</span>
+                        </Link>
+                        <button
+                          onClick={() => handleStatusChange(m.id, 'COMPLETED')}
+                          className="px-2.5 py-1.5 rounded bg-[#252a37] hover:bg-[#343947] text-[#c2c6d6] text-xs font-semibold"
+                        >
+                          End Match
+                        </button>
+                      </>
+                    )}
+
+                    {m.status === 'COMPLETED' && (
+                      <Link
+                        to={`/matches/${m.id}`}
+                        className="text-xs font-semibold text-[#4cd7f6] hover:underline"
+                      >
+                        View Final Sheet →
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
