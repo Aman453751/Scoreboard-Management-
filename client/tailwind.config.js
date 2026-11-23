@@ -8,15 +8,16 @@ export default {
     extend: {
       colors: {
         navy: {
-          950: '#070C18',
-          900: '#0B1329',
-          850: '#0E1733',
-          800: '#111D42',
-          700: '#1A295C',
-          600: '#23377A'
+          950: '#070C16', // Deepest background
+          900: '#0B1220', // Main surface background
+          850: '#0F1829', // Card surface
+          800: '#152136', // Elevated card / row surface
+          750: '#1B2A45', // Highlighted surface
+          700: '#233658', // Borders
+          600: '#324B7A'
         },
         slate: {
-          850: '#151F33'
+          850: '#111A2E'
         },
         primary: {
           DEFAULT: '#2563EB',
@@ -33,21 +34,25 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace']
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       animation: {
-        'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'fade-in': 'fadeIn 0.25s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out'
+        'pulse-subtle': 'pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 0.2s ease-in-out',
+        'slide-up': 'slideUp 0.25s ease-out'
       },
       keyframes: {
+        pulseSubtle: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.4' }
+        },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' }
         },
         slideUp: {
-          '0%': { transform: 'translateY(8px)', opacity: '0' },
+          '0%': { transform: 'translateY(6px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' }
         }
       }
