@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique
+  password        String
+  role            String    @default("VIEWER") // ADMIN, SCORER, VIEWER
+  college         String?
+  phone           String?
+  avatar          String?
+  assignedMatches Match[]   @relation("ScorerMatches")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Tournament {
+  id           Int              @id @default(autoincrement())
+  name         String
+  sportType    String           // CRICKET, FOOTBALL, BASKETBALL
+  startDate    DateTime
+  endDate      DateTime
+  location     String
+  description  String?
+  status       String           @default("UPCOMING") // UPCOMING, ONGOING, COMPLETED, CANCELLED
+  bannerImage  String?
+  teams        TournamentTeam[]
+  matches      Match[]
+  leaderboards Leaderboard[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model Team {
+  id                 Int              @id @default(autoincrement())
+  name               String
+  shortName          String?
+  logo               String?
+  college            String
+  department         String?
+  captainName        String?
+  contactEmail       String?
+  tournaments        TournamentTeam[]
+  matchesAsTeamA     Match[]          @relation("TeamAMatches")
+  matchesAsTeamB     Match[]          @relation("TeamBMatches")
+  players            Player[]
+  leaderboardEntries Leaderboard[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model TournamentTeam {
+  id           Int        @id @default(autoincrement())
+  tournamentId Int
+  teamId       Int
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([tournamentId, teamId])
+}
+
+model Player {
+  id           Int      @id @default(autoincrement())
+  name         String
+  teamId       Int
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  jerseyNumber Int?
+  role         String?  // Batsman, Bowler, Forward, Midfielder, Guard, Center, etc.
+  isCaptain    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Match {
+  id            Int          @id @default(autoincrement())
+  tournamentId  Int
+  tournament    Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamAId       Int
+  teamA         Team         @relation("TeamAMatches", fields: [teamAId], references: [id], onDelete: Cascade)
+  teamBId       Int
+  teamB         Team         @relation("TeamBMatches", fields: [teamBId], references: [id], onDelete: Cascade)
+  sportType     String       // CRICKET, FOOTBALL, BASKETBALL
+  matchDate     DateTime
+  venue         String
+  status        String       @default("UPCOMING") // UPCOMING, LIVE, COMPLETED, CANCELLED
+  scorerId      Int?
+  scorer        User?        @relation("ScorerMatches", fields: [scorerId], references: [id])
+  currentPeriod String?      // "1st Inning", "2nd Inning", "1st Half", "2nd Half", "Q1", "Q2", "Q3", "Q4", "Full Time"
+  winnerTeamId  Int?
+  resultSummary String?
+  score         Score?
+  matchEvents   MatchEvent[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Score {
+  id                   Int      @id @default(autoincrement())
+  matchId              Int      @unique
+  match                Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  // Cricket specific
+  teamARuns            Int      @default(0)
+  teamAWickets         Int      @default(0)
+  teamABalls           Int      @default(0) // total balls bowled (e.g. 15 balls = 2.3 overs)
+  teamAExtras          Int      @default(0)
+  teamBRuns            Int      @default(0)
+  teamBWickets         Int      @default(0)
+  teamBBalls           Int      @default(0)
+  teamBExtras          Int      @default(0)
+  battingTeamId        Int?
+  bowlingTeamId        Int?
+  currentInning        Int      @default(1)
+  targetRuns           Int?
+
+  // Football specific
+  teamAGoals           Int      @default(0)
+  teamBGoals           Int      @default(0)
+  matchMinutes         Int      @default(0)
+  currentHalf          String?  // "1st Half", "Half Time", "2nd Half", "Full Time"
+
+  // Basketball specific
+  teamAPoints          Int      @default(0)
+  teamBPoints          Int      @default(0)
+  currentQuarter       String?  // "Q1", "Q2", "Q3", "Q4", "OT"
+  teamAFouls           Int      @default(0)
+  teamBFouls           Int      @default(0)
+  quarterTimeLeft      String?  // e.g., "10:00"
+
+  // Common
+  lastEventDescription String?
+  updatedAt            DateTime @updatedAt
+}
+
+model MatchEvent {
+  id            Int      @id @default(autoincrement())
+  matchId       Int
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  period        String?
+  eventType     String   // RUN, WICKET, EXTRA, GOAL, CARD_YELLOW, CARD_RED, POINT_1, POINT_2, POINT_3, FOUL, PERIOD_CHANGE, STATUS_CHANGE
+  teamId        Int?
+  playerId      Int?
+  description   String
+  scoreSnapshot String   // JSON serialization of score state before or after this event
+  createdAt     DateTime @default(now())
+}
+
+model Leaderboard {
+  id            Int        @id @default(autoincrement())
+  tournamentId  Int
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamId        Int
+  team          Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  played        Int        @default(0)
+  won           Int        @default(0)
+  lost          Int        @default(0)
+  drawn         Int        @default(0)
+  points        Int        @default(0)
+  rank          Int        @default(1)
+  goalDiffOrNRR Float      @default(0.0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([tournamentId, teamId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, MATCH, SCORE, ALERT
+  createdAt DateTime @default(now())
+}
